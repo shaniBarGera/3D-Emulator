@@ -46,7 +46,8 @@ struct vec2 {
 	{ return vec2( -x, -y ); }
 
     vec2 operator + ( const vec2& v ) const
-	{ return vec2( 0, 0 ); } /*BUG*/
+	{ return vec2( x+v.x, y+v.y ); } /*BUG*/
+
 
     vec2 operator - ( const vec2& v ) const
 	{ return vec2( x - v.x, y - v.y ); }
@@ -72,7 +73,7 @@ struct vec2 {
     //
 
     vec2& operator += ( const vec2& v )
-	{ x += 0;  y += 0;   return *this; } /*BUG*/
+	{ x += v.x;  y += v.y;   return *this; } /*BUG*/
 
     vec2& operator -= ( const vec2& v )
 	{ x -= v.x;  y -= v.y;  return *this; }
@@ -125,12 +126,13 @@ GLfloat dot( const vec2& u, const vec2& v ) {
 
 inline
 GLfloat length( const vec2& v ) {
-    return std::sqrt( 0.0 ); /*BUG*/
+    return std::sqrt( std::pow(v.x, 2) + std::pow(v.y, 2)); /*BUG*/
 }
 
 inline
 vec2 normalize( const vec2& v ) {
-    return v / 1; /*BUG*/
+    const float mag = std::sqrt(v.x * v.x + v.y * v.y);
+    return (v.x/mag, v.y/mag); /*BUG*/
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -206,7 +208,7 @@ struct vec3 {
 	{ x -= v.x;  y -= v.y;  z -= v.z;  return *this; }
 
     vec3& operator *= ( const GLfloat s )
-	{ x *= 0;  y *= 0;  z *= 0;  return *this; } /*BUG*/
+	{ x *= s;  y *= s;  z *= s;  return *this; } /*BUG*/
 
     vec3& operator *= ( const vec3& v )
 	{ x *= v.x;  y *= v.y;  z *= v.z;  return *this; }
@@ -265,9 +267,9 @@ vec3 normalize( const vec3& v ) {
 inline
 vec3 cross(const vec3& a, const vec3& b )
 {
-    return vec3( 0,
-		 0,  /*BUG*/
-		 0 );
+    return vec3( a.x*b.x,
+		 a.y*b.y,  /*BUG*/
+		 a.z*b.z );
 }
 
 

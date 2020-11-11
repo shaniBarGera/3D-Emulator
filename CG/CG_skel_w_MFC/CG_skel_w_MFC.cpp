@@ -39,12 +39,14 @@ bool lb_down,rb_down,mb_down;
 
 void display( void )
 {
-//Call the scene and ask it to draw itself
+	//Call the scene and ask it to draw itself
+	//scene->draw(); //CHANGE
 }
 
 void reshape( int width, int height )
 {
-//update the renderer's buffers
+	//update the renderer's buffers
+
 }
 
 void keyboard( unsigned char key, int x, int y )
@@ -80,11 +82,12 @@ void mouse(int button, int state, int x, int y)
 void motion(int x, int y)
 {
 	// calc difference in mouse movement
-	int dx=x-last_x;
-	int dy=y-last_y;
+	int dx = x - last_x;
+	int dy = y - last_y;
+
 	// update last x,y
-	last_x=x;
-	last_y=y;
+	last_x = x;
+	last_y = y;
 }
 
 void fileMenu(int id)
@@ -139,7 +142,7 @@ int my_main( int argc, char **argv )
 	glutInitWindowSize( 512, 512 );
 	glutInitContextVersion( 3, 2 );
 	glutInitContextProfile( GLUT_CORE_PROFILE );
-	glutCreateWindow( "CG" );
+	glutCreateWindow("CG");
 	glewExperimental = GL_TRUE;
 	glewInit();
 	GLenum err = glewInit();
@@ -151,8 +154,7 @@ int my_main( int argc, char **argv )
 	}
 	fprintf(stdout, "Status: Using GLEW %s\n", glewGetString(GLEW_VERSION));
 
-	
-	
+
 	renderer = new Renderer(512,512);
 	scene = new Scene(renderer);
 	//----------------------------------------------------------------------------

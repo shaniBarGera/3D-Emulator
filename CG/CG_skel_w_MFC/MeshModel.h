@@ -17,6 +17,9 @@ protected :
 
 public:
 
+	mat4 transform;
+	mat4 projection;
+
 	MeshModel(string fileName);
 	~MeshModel(void);
 	void loadFile(string fileName);
