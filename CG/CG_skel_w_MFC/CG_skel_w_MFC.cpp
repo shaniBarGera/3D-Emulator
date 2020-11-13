@@ -40,7 +40,8 @@ bool lb_down,rb_down,mb_down;
 void display( void )
 {
 	//Call the scene and ask it to draw itself
-	//scene->draw(); //CHANGE
+	//scene* new_scene = new scene(fileName);
+	scene->draw(); //CHANGE
 }
 
 void reshape( int width, int height )
