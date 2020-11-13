@@ -72,13 +72,17 @@ void Renderer::SetDemoBuffer()
 	//vertical line
 	for(int i=0; i<m_width; i++)
 	{
-		m_outBuffer[INDEX(m_width,256,i,0)]=1;	m_outBuffer[INDEX(m_width,256,i,1)]=0;	m_outBuffer[INDEX(m_width,256,i,2)]=0;
+		m_outBuffer[INDEX(m_width,256,i,0)]=1;
+		m_outBuffer[INDEX(m_width,256,i,1)]=0;	
+		m_outBuffer[INDEX(m_width,256,i,2)]=0;
 
 	}
 	//horizontal line
 	for(int i=0; i<m_width; i++)
 	{
-		m_outBuffer[INDEX(m_width,i,256,0)]=1;	m_outBuffer[INDEX(m_width,i,256,1)]=0;	m_outBuffer[INDEX(m_width,i,256,2)]=1;
+		m_outBuffer[INDEX(m_width,i,256,0)]=1;
+		m_outBuffer[INDEX(m_width,i,256,1)]=0;
+		m_outBuffer[INDEX(m_width,i,256,2)]=1;
 
 	}
 }
@@ -88,11 +92,7 @@ void Renderer::SetDemoBuffer()
 
 
 void Renderer::DrawTriangles(const vector<vec3>* vertices, const vector<vec3>* normals) {
-	//clean bufer
-	//for (int i = 0; i < m_width; i++)
-	//	for (int j = 0; j < m_height; j++) {
-	//		m_outBuffer[INDEX(m_width, i, j, 0)] = 0;
-	//	}
+	
 	
 	GLfloat max_x = get_max_of_x(vertices);
 	GLfloat max_y = get_max_of_y(vertices);
@@ -211,3 +211,17 @@ void Renderer::SwapBuffers()
 	a = glGetError();
 }
 
+void Renderer::reshape(int w, int h) {
+	m_width = w;
+	m_height = h;
+}
+
+void Renderer::ClearColorBuffer() {
+	//clean bufer
+	for (int i = 0; i < m_width; i++)
+		for (int j = 0; j < m_height; j++) {
+			m_outBuffer[INDEX(m_width, i, j, 0)] = 0;
+			m_outBuffer[INDEX(m_width, i, j, 1)] = 0;
+			m_outBuffer[INDEX(m_width, i, j, 2)] = 0;
+		}
+}

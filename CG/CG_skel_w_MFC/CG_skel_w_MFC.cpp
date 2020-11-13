@@ -47,7 +47,7 @@ void display( void )
 void reshape( int width, int height )
 {
 	//update the renderer's buffers
-
+	renderer->reshape(width, height);
 }
 
 void keyboard( unsigned char key, int x, int y )
@@ -78,6 +78,8 @@ void mouse(int button, int state, int x, int y)
 	}
 
 	// add your code
+	//reshape(200, 200);
+	//display();
 }
 
 void motion(int x, int y)
@@ -89,6 +91,7 @@ void motion(int x, int y)
 	// update last x,y
 	last_x = x;
 	last_y = y;
+	//reshape(800, 300);
 }
 
 void fileMenu(int id)

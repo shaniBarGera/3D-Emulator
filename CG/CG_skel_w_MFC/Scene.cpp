@@ -16,12 +16,15 @@ void Scene::draw()
 	// 2. Tell all models to draw themselves
 	for (size_t i = 0; i < models.size(); ++i) {
 		 MeshModel* model = (MeshModel*)models[i]; //CHANGE
-		 //m_renderer->SetCameraTransform(model->transform);
+		 //m_renderer->SetCameraTransform();
 		 //m_renderer->SetProjection(model->projection);
 		 model->draw();
 		 m_renderer->DrawTriangles(&model->vertex_positions, NULL);
 		 m_renderer->SwapBuffers();
+		 m_renderer->ClearColorBuffer();
 	}
+	//m_renderer->ClearColorBuffer();
+	//m_renderer->SwapBuffers();
 }
 
 void Scene::drawDemo()
