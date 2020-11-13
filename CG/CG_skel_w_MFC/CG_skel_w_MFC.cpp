@@ -47,6 +47,8 @@ void display( void )
 void reshape( int width, int height )
 {
 	//update the renderer's buffers
+	printf("RESHAPE\n");
+
 	renderer->reshape(width, height);
 }
 

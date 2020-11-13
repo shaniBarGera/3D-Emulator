@@ -88,9 +88,6 @@ void Renderer::SetDemoBuffer()
 }
 
 
-
-
-
 void Renderer::DrawTriangles(const vector<vec3>* vertices, const vector<vec3>* normals) {
 	
 	
@@ -104,35 +101,33 @@ void Renderer::DrawTriangles(const vector<vec3>* vertices, const vector<vec3>* n
 		int x2 = normal((*vertices)[i+1].x, 0, m_width-1, min_x, max_x);
 		int y1 = normal((*vertices)[i].y, 0, m_height-1, min_y, max_y);
 		int y2 = normal((*vertices)[i + 1].y, 0, m_height-1, min_y, max_y);
-		//int m = int((y2-y1)/(x2-x1));
-		//printf("%d %d %d %d\n",x1,x2,y1,m);
-		//printf("%d\n", m);
 		m_outBuffer[INDEX(m_width, x1, y1, 1)] = 1;
 		m_outBuffer[INDEX(m_width, x2, y2, 1)] = 1;
-		
-		//int m_new = 2 * (y2 - y1);
-		//int slope_error_new = m_new - (x2 - x1);
-		//for (int x = x1, y = y1; x <= x2; x++)
-		//{
-		//	m_outBuffer[INDEX(m_width, x, y, 0)] = 1;
-
-			// Add slope to increment angle formed 
-			//slope_error_new += m_new;
-
-			// Slope error reached limit, time to 
-			// increment y and update slope error. 
-			//if (slope_error_new >= 0)
-			//{
-			//	y++;
-			//	slope_error_new -= 2 * (x2 - x1);
-			//}
-		//}
-		
 	}
 }
 
+void Renderer::ClearColorBuffer() {
+	//clean bufer
+	for (int i = 0; i < m_width; i++)
+		for (int j = 0; j < m_height; j++) {
+			m_outBuffer[INDEX(m_width, i, j, 0)] = 0;
+			m_outBuffer[INDEX(m_width, i, j, 1)] = 0;
+			m_outBuffer[INDEX(m_width, i, j, 2)] = 0;
+		}
+}
 
+void Renderer::reshape(int width, int height) {
+	m_width = width;
+	m_height = height;
+	delete[] m_outBuffer;
+	CreateLocalBuffer();
+	SwapBuffers();
+}
 
+void Renderer::CreateLocalBuffer() {
+	CreateOpenGLBuffer(); //Do not remove this line.
+	m_outBuffer = new float[3 * m_width * m_height];
+}
 
 /////////////////////////////////////////////////////
 //OpenGL stuff. Don't touch.
@@ -209,19 +204,4 @@ void Renderer::SwapBuffers()
 	a = glGetError();
 	glutSwapBuffers();
 	a = glGetError();
-}
-
-void Renderer::reshape(int w, int h) {
-	m_width = w;
-	m_height = h;
-}
-
-void Renderer::ClearColorBuffer() {
-	//clean bufer
-	for (int i = 0; i < m_width; i++)
-		for (int j = 0; j < m_height; j++) {
-			m_outBuffer[INDEX(m_width, i, j, 0)] = 0;
-			m_outBuffer[INDEX(m_width, i, j, 1)] = 0;
-			m_outBuffer[INDEX(m_width, i, j, 2)] = 0;
-		}
 }
