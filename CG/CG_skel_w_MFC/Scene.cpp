@@ -19,8 +19,9 @@ void Scene::draw()
 		 //m_renderer->SetCameraTransform(model->transform);
 		 //m_renderer->SetProjection(model->projection);
 		 model->draw();
+		 m_renderer->DrawTriangles(&model->vertex_positions, NULL);
+		 m_renderer->SwapBuffers();
 	}
-	m_renderer->SwapBuffers();
 }
 
 void Scene::drawDemo()

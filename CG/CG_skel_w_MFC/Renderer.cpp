@@ -47,6 +47,14 @@ void Renderer::SetDemoBuffer()
 	}
 }
 
+void Renderer::DrawTriangles(const vector<vec3>* vertices, const vector<vec3>* normals) {
+	//horizontal line
+	for (int i = 0; i < m_width; i++)
+	{
+		m_outBuffer[INDEX(m_width, i, 256, 0)] = 1;	m_outBuffer[INDEX(m_width, i, 256, 1)] = 0;	m_outBuffer[INDEX(m_width, i, 256, 2)] = 1;
+
+	}
+}
 
 
 
@@ -127,3 +135,4 @@ void Renderer::SwapBuffers()
 	glutSwapBuffers();
 	a = glGetError();
 }
+
