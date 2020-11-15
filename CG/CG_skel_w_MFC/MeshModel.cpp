@@ -131,13 +131,5 @@ void MeshModel::loadFile(string fileName)
 
 void MeshModel::draw()
 {
-	for (int i = 0; i < vertex_positions.size() - 1; i++)
-	{
-		vec4 temp = vec4(vertex_positions[i]);
-		temp = _world_transform * temp;
-		vertex_positions[i].x = temp.x / temp.w;
-		vertex_positions[i].y = temp.y / temp.w;
-		vertex_positions[i].z = temp.z / temp.w;
-	}
 	printf("Hello World");
 }

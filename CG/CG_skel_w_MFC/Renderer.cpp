@@ -95,17 +95,16 @@ void Renderer::Drawline(int x1, int x2, int y1, int y2) {
 	int d = 2 * dy - dx;
 	int de = 2 * dy;
 	int dne = 2 * dy - 2 * dx;
-	m_outBuffer[INDEX(m_width-1, x, y, 0)] = 1;
-	m_outBuffer[INDEX(m_width - 1, x, y, 1)] = 1;
-	m_outBuffer[INDEX(m_width - 1, x, y, 2)] = 1;
+	printf("%d %d %d\n", m_width, x, y);
+	m_outBuffer[INDEX(m_width, x, y, 0)] = 1;
 	for (int x = x1; x <= x2; x++) {
 		if (d < 0) d += de;
 		else {
 			y++;
 			d += dne;
-			m_outBuffer[INDEX(m_width, x, y, 1)] = 1;
-			m_outBuffer[INDEX(m_width - 1, x, y, 1)] = 1;
-			m_outBuffer[INDEX(m_width - 1, x, y, 2)] = 1;
+			printf("%d %d %d\n", m_width, x, y);
+			m_outBuffer[INDEX(m_width, x, y, 0)] = 1;
+			
 		}
 	}
 }
@@ -113,22 +112,22 @@ void Renderer::Drawline(int x1, int x2, int y1, int y2) {
 void Renderer::DrawTriangles(const vector<vec3>* vertices, const vector<vec3>* normals) {
 	
 	
-	//GLfloat max_x = get_max_of_x(vertices);
-	//GLfloat max_y = get_max_of_y(vertices);
-	//GLfloat min_x = get_min_of_x(vertices);
-	//GLfloat min_y = get_min_of_y(vertices);
-	for (int i = 0; i < vertices->size()-1; i++)
+	GLfloat max_x = get_max_of_x(vertices);
+	GLfloat max_y = get_max_of_y(vertices);
+	GLfloat min_x = get_min_of_x(vertices);
+	GLfloat min_y = get_min_of_y(vertices);
+	for (int i = 0; i < vertices->size(); i+=3)
 	{
-		//int x1 = normal((*vertices)[i].x, 0, m_width-1, min_x, max_x);
-		//int x2 = normal((*vertices)[i+1].x, 0, m_width-1, min_x, max_x);
-		//int y1 = normal((*vertices)[i].y, 0, m_height-1, min_y, max_y);
-		//int y2 = normal((*vertices)[i + 1].y, 0, m_height-1, min_y, max_y);
+		int x1 = normal((*vertices)[i].x, 0, m_width-1, min_x, max_x);
+		int x2 = normal((*vertices)[i+1].x, 0, m_width-1, min_x, max_x);
+		int x3 = normal((*vertices)[i + 2].x, 0, m_width - 1, min_x, max_x);
+		int y1 = normal((*vertices)[i].y, 0, m_height-1, min_y, max_y);
+		int y2 = normal((*vertices)[i + 1].y, 0, m_height-1, min_y, max_y);		
+		int y3 = normal((*vertices)[i + 2].y, 0, m_height - 1, min_y, max_y);
 
-		int x1 = (*vertices)[i].x;
-		int x2 = (*vertices)[i+1].x;
-		int y1 = (*vertices)[i].y;
-		int y2 = (*vertices)[i + 1].y;
 		Drawline(x1, x2, y1, y2);
+		Drawline(x2, x3, y2, y3);
+		Drawline(x1, x3, y1, y3);
 	}
 }
 
@@ -262,5 +261,5 @@ void Renderer::Init() {
 	CTransform = mat4(a, b, c, d);
 	OTransform = mat4(a, b, c, d);
 	Projection = mat4(a, b, c, d);
-	//NTransform = mat3(a, b, c);
+	//NTransform = mat4(a, b, c, d);
 }
