@@ -63,6 +63,7 @@ void keyboard(unsigned char key, int x, int y)
 	case 033:
 		exit(EXIT_SUCCESS);
 		break;
+
 	}
 }
 

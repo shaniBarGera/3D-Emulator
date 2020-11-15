@@ -41,4 +41,5 @@ public:
 	void ClearDepthBuffer();
 	void SetDemoBuffer();
 	void reshape(int w,int h);
+	void setPixelOn(int x, int y);
 };

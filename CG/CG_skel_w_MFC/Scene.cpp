@@ -79,6 +79,8 @@ void Scene::addPrim() {
 
 }
 void Scene::addCam() {
+	Camera* cam = new Camera();
+	cameras.push_back(cam);
 
 }
 void Scene::transform() {

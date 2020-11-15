@@ -8,7 +8,7 @@
 
 GLfloat get_max_of_x(const vector<vec3>* vertices) {
 	GLfloat max = 0;
-	for (int i = 0; i < vertices->size() - 1; i++) {
+	for (size_t i = 0; i < vertices->size() - 1; i++) {
 		if ((*vertices)[i].x >= max) max = (*vertices)[i].x;
 	}
 	return max;
@@ -87,24 +87,66 @@ void Renderer::SetDemoBuffer()
 	}
 }
 
+void Renderer::setPixelOn(int x, int y) {
+	m_outBuffer[INDEX(m_width - 1, x, y, 0)] = 1;
+	m_outBuffer[INDEX(m_width - 1, x, y, 1)] = 0;
+	m_outBuffer[INDEX(m_width - 1, x, y, 2)] = 0;
+}
+
+int Sign(int dxy)
+{
+	if (dxy < 0) return -1;
+	else if (dxy > 0) return 1;
+	else return 0;
+}
+
 void Renderer::Drawline(int x1, int x2, int y1, int y2) {
-	int x = x1;
-	int y = y1;
-	int dx = x2 - x1;
-	int dy = y2 - y1;
-	int d = 2 * dy - dx;
-	int de = 2 * dy;
-	int dne = 2 * dy - 2 * dx;
-	printf("%d %d %d\n", m_width, x, y);
-	m_outBuffer[INDEX(m_width, x, y, 0)] = 1;
-	for (int x = x1; x <= x2; x++) {
-		if (d < 0) d += de;
-		else {
-			y++;
-			d += dne;
-			printf("%d %d %d\n", m_width, x, y);
-			m_outBuffer[INDEX(m_width, x, y, 0)] = 1;
-			
+	int Dx = x2 - x1;
+	int Dy = y2 - y1;
+
+	//# Increments
+	int Sx = Sign(Dx);
+	int Sy = Sign(Dy);
+
+	//# Segment length
+	Dx = abs(Dx);
+	Dy = abs(Dy);
+	int D = max(Dx, Dy);
+
+	//# Initial remainder
+	double R = D / 2;
+
+	int X = x1;
+	int Y = y1;
+	if (Dx > Dy)
+	{
+		//# Main loop
+		for (int I = 0; I < D; I++)
+		{
+			setPixelOn(X, Y);
+			//# Update (X, Y) and R
+			X += Sx; R += Dy; //# Lateral move
+			if (R >= Dx)
+			{
+				Y += Sy;
+				R -= Dx; //# Diagonal move
+			}
+		}
+	}
+	else
+	{
+		//# Main loop
+		for (int I = 0; I < D; I++)
+		{
+			setPixelOn(X, Y);
+			//# Update (X, Y) and R
+			Y += Sy;
+			R += Dx; //# Lateral move
+			if (R >= Dy)
+			{
+				X += Sx;
+				R -= Dy; //# Diagonal move
+			}
 		}
 	}
 }
@@ -116,29 +158,33 @@ void Renderer::DrawTriangles(const vector<vec3>* vertices, const vector<vec3>* n
 	GLfloat max_y = get_max_of_y(vertices);
 	GLfloat min_x = get_min_of_x(vertices);
 	GLfloat min_y = get_min_of_y(vertices);
-	for (int i = 0; i < vertices->size(); i+=3)
+	
+	for (int i = 0; i < vertices->size()-1; i+=3)
 	{
-		int x1 = normal((*vertices)[i].x, 0, m_width-1, min_x, max_x);
-		int x2 = normal((*vertices)[i+1].x, 0, m_width-1, min_x, max_x);
-		int x3 = normal((*vertices)[i + 2].x, 0, m_width - 1, min_x, max_x);
-		int y1 = normal((*vertices)[i].y, 0, m_height-1, min_y, max_y);
-		int y2 = normal((*vertices)[i + 1].y, 0, m_height-1, min_y, max_y);		
-		int y3 = normal((*vertices)[i + 2].y, 0, m_height - 1, min_y, max_y);
+		int x[3] = { 0 };
+		int y[3] = { 0 };
+		for (int j = 0; j < 3; j++) {
+			x[j] = normal((*vertices)[i + j].x, 0, m_width - 1, min_x, max_x);
+			y[j] = normal((*vertices)[i + j].y, 0, m_height - 1, min_y, max_y);
 
-		Drawline(x1, x2, y1, y2);
-		Drawline(x2, x3, y2, y3);
-		Drawline(x1, x3, y1, y3);
+			setPixelOn(x[j], y[j]);
+		}
+
+		Drawline(x[0], x[1], y[0], y[1]);
+		Drawline(x[2], x[1], y[2], y[1]);
+		Drawline(x[0], x[2], y[0], y[2]);
 	}
 }
 
 void Renderer::ClearColorBuffer() {
 	//clean bufer
-	for (int i = 0; i < m_width; i++)
+	for (int i = 0; i < m_width; i++) {
 		for (int j = 0; j < m_height; j++) {
 			m_outBuffer[INDEX(m_width, i, j, 0)] = 0;
 			m_outBuffer[INDEX(m_width, i, j, 1)] = 0;
 			m_outBuffer[INDEX(m_width, i, j, 2)] = 0;
 		}
+	}
 }
 
 void Renderer::reshape(int width, int height) {

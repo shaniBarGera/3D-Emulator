@@ -114,7 +114,6 @@ void MeshModel::loadFile(string fileName)
 	//f 1 3 4
 	//Then vertex_positions should contain:
 	//vertex_positions={v1,v2,v3,v1,v3,v4}
-	//vector<vec3> vertex_positions; //CHANGE
 
 	// iterate through all stored faces and create triangles
 	int k = 0;
@@ -122,7 +121,6 @@ void MeshModel::loadFile(string fileName)
 	{
 		for (int i = 0; i < 3; i++)
 		{
-			//printf("%d\n", it->v[i]);
 			vertex_positions.push_back(vertices[it->v[i]-1]); //CHANGE
 		}
 	}
