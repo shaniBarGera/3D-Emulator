@@ -14,7 +14,6 @@ protected :
 	//add more attributes
 	
 	bool normal = false;
-	
 public:
 	mat4 _world_transform;
 	mat3 _normal_transform;
@@ -28,14 +27,5 @@ public:
 	void draw();
 	vector<vec3> vertex_positions;
 	vector<vec3> vertex_normal;
-	bool bbox = true;
 	
-};
-
-class PrimMeshModel : public MeshModel
-{
-	
-public:
-	PrimMeshModel();
-	void add_cube();
 };
