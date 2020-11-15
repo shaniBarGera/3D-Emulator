@@ -23,11 +23,11 @@ class Camera {
 
 public:
 	void setTransformation(const mat4& transform);
-	void LookAt(const vec4& eye, const vec4& at, const vec4& up );
-	void Ortho( const float left, const float right,
+	mat4 LookAt(const vec4& eye, const vec4& at, const vec4& up );
+	mat4 Ortho( const float left, const float right,
 		const float bottom, const float top,
 		const float zNear, const float zFar );
-	void Frustum( const float left, const float right,
+	mat4 Frustum( const float left, const float right,
 		const float bottom, const float top,
 		const float zNear, const float zFar );
 	mat4 Perspective( const float fovy, const float aspect,
@@ -48,6 +48,12 @@ public:
 	void draw();
 	void drawDemo();
 	
+	void setNormals();
+	void addPrim();
+	void addCam();
+	void transform();
+	void render();
+
 	int activeModel;
 	int activeLight;
 	int activeCamera;
