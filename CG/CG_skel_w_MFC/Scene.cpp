@@ -70,3 +70,20 @@ mat4 Camera::Frustum(const float left, const float right,
 	vec4 d = vec4(0.0,0.0,-1.0,0.0);
 	return mat4(a, b, c, d);
 }
+
+
+void Scene::setNormals() {
+
+}
+void Scene::addPrim() {
+
+}
+void Scene::addCam() {
+
+}
+void Scene::transform() {
+
+}
+void Scene::render() {
+
+}

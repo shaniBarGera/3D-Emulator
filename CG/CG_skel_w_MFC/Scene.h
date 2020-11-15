@@ -48,6 +48,12 @@ public:
 	void draw();
 	void drawDemo();
 	
+	void setNormals();
+	void addPrim();
+	void addCam();
+	void transform();
+	void render();
+
 	int activeModel;
 	int activeLight;
 	int activeCamera;
