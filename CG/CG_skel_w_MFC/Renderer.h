@@ -11,7 +11,10 @@ class Renderer
 	float *m_outBuffer; // 3*width*height
 	float *m_zbuffer; // width*height
 	int m_width, m_height;
-
+	mat4 CTransform;
+	mat4 OTransform;
+	mat4 Projection;
+	mat3 NTransform;
 	void CreateBuffers(int width, int height);
 	void CreateLocalBuffer();
 
@@ -29,6 +32,7 @@ public:
 	~Renderer(void);
 	void Init();
 	void DrawTriangles(const vector<vec3>* vertices, const vector<vec3>* normals=NULL);
+	void Drawline(int x1, int x2, int y1, int y2);
 	void SetCameraTransform(const mat4& cTransform);
 	void SetProjection(const mat4& projection);
 	void SetObjectMatrices(const mat4& oTransform, const mat3& nTransform);
