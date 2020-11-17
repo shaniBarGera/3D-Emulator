@@ -14,6 +14,7 @@ protected :
 	//add more attributes
 	
 	bool normal = false;
+	
 public:
 	mat4 _world_transform;
 	mat3 _normal_transform;
@@ -28,4 +29,10 @@ public:
 	vector<vec3> vertex_positions;
 	vector<vec3> vertex_normal;
 	
+};
+
+class PrimMeshModel : public MeshModel
+{
+public:
+	PrimMeshModel() : MeshModel("C:\\Users\\shani\\Documents\\semester7\\CG\\cube\\cube.obj"){}
 };

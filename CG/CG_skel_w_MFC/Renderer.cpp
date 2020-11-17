@@ -161,13 +161,19 @@ void Renderer::DrawTriangles(const vector<vec3>* vertices, const vector<vec3>* n
 	
 	for (int i = 0; i < vertices->size()-1; i+=3)
 	{
+		//vec4 v = ((*vertices)[i], 0);
+		
 		int x[3] = { 0 };
 		int y[3] = { 0 };
 		for (int j = 0; j < 3; j++) {
 			x[j] = normal((*vertices)[i + j].x, 0, m_width - 1, min_x, max_x);
 			y[j] = normal((*vertices)[i + j].y, 0, m_height - 1, min_y, max_y);
-
-			setPixelOn(x[j], y[j]);
+			// translate v to (x,y,z,1)
+			// v = Projection * CTransfrom^(-1) * OTransfrom * Vtranslated
+			
+			// lookAt(eye, curr_v, up)
+			//x[j] = v.x;
+			//y[j] = v.y;
 		}
 
 		Drawline(x[0], x[1], y[0], y[1]);
@@ -295,6 +301,8 @@ void Renderer::SetProjection(const mat4& projection) {
 void Renderer::SetObjectMatrices(const mat4& oTransform, const mat3& nTransform) {
 	OTransform = oTransform;
 	NTransform = nTransform;
+
+
 }
 
 void Renderer::Init() {

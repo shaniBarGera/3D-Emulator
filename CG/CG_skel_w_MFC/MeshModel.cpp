@@ -103,6 +103,9 @@ void MeshModel::loadFile(string fileName)
 		{
 			// comment / empty line
 		}
+		else if (lineType == "mtllib" || lineType == "usemtl" || lineType == "g") {
+
+		}
 		else
 		{
 			cout << "Found unknown line Type \"" << lineType << "\"";
@@ -129,5 +132,5 @@ void MeshModel::loadFile(string fileName)
 
 void MeshModel::draw()
 {
-	printf("Hello World");
 }
+	

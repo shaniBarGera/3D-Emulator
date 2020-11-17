@@ -560,8 +560,8 @@ mat4 Translate( const GLfloat x, const GLfloat y, const GLfloat z )
 {
     mat4 c;
     c[0][0] = x;
-    c[0][0] = y;  /*BUG*/
-    c[0][0] = z;
+    c[1][1] = y;  /*BUG*/
+    c[2][2] = z;
     return c;
 }
 
@@ -587,8 +587,8 @@ mat4 Scale( const GLfloat x, const GLfloat y, const GLfloat z )
 {
     mat4 c;
     c[0][0] = x;
-    c[0][0] = y; /*BUG*/
-    c[0][0] = z;
+    c[1][1] = y; /*BUG*/
+    c[2][2] = z;
     return c;
 }
 
