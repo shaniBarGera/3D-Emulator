@@ -27,6 +27,7 @@ GLfloat get_min_of_x(const vector<vec3>* vertices) {
 	for (int i = 0; i < vertices->size() - 1; i++) {
 		if ((*vertices)[i].x <= min) min = (*vertices)[i].x;
 	}
+
 	return min;
 }
 
@@ -152,12 +153,20 @@ void Renderer::Drawline(int x1, int x2, int y1, int y2) {
 }
 
 void Renderer::DrawTriangles(const vector<vec3>* vertices, const vector<vec3>* normals) {
-	
-	
-	GLfloat max_x = get_max_of_x(vertices);
-	GLfloat max_y = get_max_of_y(vertices);
-	GLfloat min_x = get_min_of_x(vertices);
-	GLfloat min_y = get_min_of_y(vertices);
+	vec4 a = vec4((m_width-1)/(get_max_of_x(vertices) - get_min_of_x(vertices))  , 0, 0, 0);
+	vec4 b = vec4(0, (m_height-1)/(get_max_of_y(vertices) - get_min_of_y(vertices)) , 0, 0);
+	vec4 c = vec4(0, 0, 1, 0);
+	vec4 d = vec4(0, 0, 0, 1);
+	WTransform = mat4(a, b, c, d);
+	//vec4 e = vec4(1, 0, 0, -(get_min_of_x(vertices)));
+	//vec4 f = vec4(0, 1, 0, -(get_min_of_y(vertices)));
+	//vec4 g = vec4(0, 0, 1, 0);
+	//vec4 h = vec4(0, 0, 0, 1);
+	//mat4 _world_transform = mat4(e, f, g, h);
+	//GLfloat max_x = get_max_of_x(vertices);
+	//GLfloat max_y = get_max_of_y(vertices);
+	//GLfloat min_x = get_min_of_x(vertices);
+	//GLfloat min_y = get_min_of_y(vertices);
 	
 	for (int i = 0; i < vertices->size()-1; i+=3)
 	{
@@ -166,8 +175,12 @@ void Renderer::DrawTriangles(const vector<vec3>* vertices, const vector<vec3>* n
 		int x[3] = { 0 };
 		int y[3] = { 0 };
 		for (int j = 0; j < 3; j++) {
-			x[j] = normal((*vertices)[i + j].x, 0, m_width - 1, min_x, max_x);
-			y[j] = normal((*vertices)[i + j].y, 0, m_height - 1, min_y, max_y);
+			vec4 temp = WTransform*OTransform*vec4((*vertices)[i + j]);
+
+			x[j] = 0.1*temp.x/temp.w;
+			y[j] = 0.1*temp.y / temp.w;
+			//x[j] = normal((*vertices)[i + j].x, 0, m_width - 1, min_x, max_x);
+			//y[j] = normal((*vertices)[i + j].y, 0, m_height - 1, min_y, max_y);
 			// translate v to (x,y,z,1)
 			// v = Projection * CTransfrom^(-1) * OTransfrom * Vtranslated
 			

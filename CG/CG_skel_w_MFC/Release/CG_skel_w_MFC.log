@@ -1,0 +1,14 @@
+﻿  Renderer.cpp
+C:\Users\ETL\Desktop\hw\graphic\CG_skel_2019\7\CG-CG1\CG\CG_skel_w_MFC\Renderer.cpp(19,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\ETL\Desktop\hw\graphic\CG_skel_2019\7\CG-CG1\CG\CG_skel_w_MFC\Renderer.cpp(27,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\ETL\Desktop\hw\graphic\CG_skel_2019\7\CG-CG1\CG\CG_skel_w_MFC\Renderer.cpp(36,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\ETL\Desktop\hw\graphic\CG_skel_2019\7\CG-CG1\CG\CG_skel_w_MFC\Renderer.cpp(171,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\ETL\Desktop\hw\graphic\CG_skel_2019\7\CG-CG1\CG\CG_skel_w_MFC\Renderer.cpp(180,21): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+C:\Users\ETL\Desktop\hw\graphic\CG_skel_2019\7\CG-CG1\CG\CG_skel_w_MFC\Renderer.cpp(181,22): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+LINK : warning LNK4098: defaultlib 'MSVCRT' conflicts with use of other libs; use /NODEFAULTLIB:library
+  Generating code
+  6 of 1064 functions ( 0.6%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    7 functions had inline decision re-evaluated but remain unchanged
+  Finished generating code
+  CG_skel_w_MFC.vcxproj -> C:\Users\ETL\Desktop\hw\graphic\CG_skel_2019\7\CG-CG1\CG\Release\CG_skel_w_MFC.exe

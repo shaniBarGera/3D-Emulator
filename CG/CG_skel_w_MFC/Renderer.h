@@ -13,6 +13,7 @@ class Renderer
 	int m_width, m_height;
 	mat4 CTransform;
 	mat4 OTransform;
+	mat4 WTransform;
 	mat4 Projection;
 	mat3 NTransform;
 	void CreateBuffers(int width, int height);

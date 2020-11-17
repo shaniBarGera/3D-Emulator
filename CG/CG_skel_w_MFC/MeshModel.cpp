@@ -6,6 +6,40 @@
 #include <fstream>
 #include <sstream>
 
+GLfloat get_max_x(const vector<vec3>* vertices) {
+	GLfloat max = 0;
+	for (size_t i = 0; i < vertices->size() - 1; i++) {
+		if ((*vertices)[i].x >= max) max = (*vertices)[i].x;
+	}
+	return max;
+}
+
+GLfloat get_max_y(const vector<vec3>* vertices) {
+	GLfloat max = 0;
+	for (int i = 0; i < vertices->size() - 1; i++) {
+		if ((*vertices)[i].y >= max) max = (*vertices)[i].y;
+	}
+	return max;
+}
+
+GLfloat get_min_x(const vector<vec3>* vertices) {
+	GLfloat min = 10000;
+	for (int i = 0; i < vertices->size() - 1; i++) {
+		if ((*vertices)[i].x <= min) min = (*vertices)[i].x;
+	}
+	return min;
+}
+
+GLfloat get_min_y(const vector<vec3>* vertices) {
+	GLfloat min = 10000;
+	for (int i = 0; i < vertices->size() - 1; i++) {
+		if ((*vertices)[i].y <= min) min = (*vertices)[i].y;
+	}
+	return min;
+}
+
+
+
 using namespace std;
 
 struct FaceIdcs
@@ -127,6 +161,11 @@ void MeshModel::loadFile(string fileName)
 			vertex_positions.push_back(vertices[it->v[i]-1]); //CHANGE
 		}
 	}
+	vec4 a = vec4(1,0,0,-(get_min_x(&vertex_positions)));
+	vec4 b = vec4(0, 1, 0, -(get_min_y(&vertex_positions)));
+	vec4 c = vec4(0, 0, 1, 0);
+	vec4 d = vec4(0, 0, 0, 1);
+	_world_transform = mat4(a,b,c,d);
 }
 
 
