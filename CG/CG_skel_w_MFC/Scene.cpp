@@ -1,7 +1,6 @@
 #include "stdafx.h"
 #include "Scene.h"
 #include "MeshModel.h"
-#include "Camera.h"
 #include <string>
 
 

@@ -23,6 +23,7 @@
 #include "Renderer.h"
 #include <string>
 
+
 #define BUFFER_OFFSET( offset )   ((GLvoid*) (offset))
 
 #define CAM_ADD 1
@@ -59,6 +60,7 @@ string dialogBox() {
 	if (dlg.DoModal() == IDOK) {
 		return dlg.GetCmd();
 	}
+	return "";
 }
 
 
