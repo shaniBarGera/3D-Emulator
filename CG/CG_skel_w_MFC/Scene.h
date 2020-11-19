@@ -44,12 +44,14 @@ class Scene {
 	vector<Camera*> cameras;
 	Renderer *m_renderer;
 
+	void _add_line(Model* model, vec3 v1, vec3 v2, vec3 v3);
+
 public:
 	int activeModel;
 	int activeLight;
 	int activeCamera;
-	int step;
-
+	GLfloat step;
+	
 	Scene();
 	Scene(Renderer* renderer);
 	~Scene();
@@ -62,12 +64,16 @@ public:
 	void addPrim();
 	void addCam(string s);
 	void render();
-	void rotate();
+	void rotate(char cord);
 	void zoomIn();
 	void zoomOut();
-	void scale(int dx, int dy);
 	void bbox();
+	void unbbox();
 	void focus();
-	void move();
+	void scale(char dir);
+	void movex(char dir);
+	void move(int dx, int dy);
+	void wframe();
+	void mframe();
 	
 };

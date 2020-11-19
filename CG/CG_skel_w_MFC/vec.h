@@ -255,6 +255,11 @@ GLfloat dot( const vec3& u, const vec3& v ) {
 }
 
 inline
+void print(const vec3& v) {
+    printf("%f %f %f\n", v.x, v.y, v.z);
+}
+
+inline
 GLfloat length( const vec3& v ) {
     return std::sqrt( dot(v,v) );
 }

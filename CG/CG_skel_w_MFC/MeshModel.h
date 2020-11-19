@@ -10,15 +10,16 @@ class MeshModel : public Model
 {
 protected :
 	MeshModel() {}
-	
-	//add more attributes
-	
 	bool normal = false;
 	
+	
 public:
+	bool bbox = false;
+	char frame = 'm';
 	mat4 _world_transform;
 	mat3 _normal_transform;
-
+	mat4 m_transform;
+	mat4 m_translate;
 	mat4 transform;
 	mat4 projection;
 
@@ -34,5 +35,5 @@ public:
 class PrimMeshModel : public MeshModel
 {
 public:
-	PrimMeshModel() : MeshModel("C:\\Users\\shani\\Documents\\semester7\\CG\\cube\\cube.obj"){}
+	PrimMeshModel() : MeshModel("cube.obj"){}
 };

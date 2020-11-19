@@ -43,7 +43,9 @@
 #define MODEL_NORMAL_V 2
 #define MODEL_NORMAL_F 3
 #define MODEL_BBOX 4
-#define MODEL_ROTATE 5
+#define MODEL_UNBBOX 5
+#define MODEL_WFRAME 6
+#define MODEL_MFRAME 7
 
 
 Scene* scene;
@@ -73,6 +75,7 @@ void display(void)
 	//Call the scene and ask it to draw itself
 	//scene* new_scene = new scene(fileName);
 	scene->draw(); //CHANGE
+	glFlush();
 }
 
 void reshape(int width, int height)
@@ -98,25 +101,46 @@ void keyboard(unsigned char key, int x, int y)
 	case '-':
 		printf("MINUS\n");
 		scene->zoomOut();
+		break;
+	case 'x':
+		scene->rotate('x');
+		break;
+	case 'y':
+		scene->rotate('y');
+		break;
+	case 'z':
+		scene->rotate('z');
+		break;
+	case 'X':
+		scene->rotate('X');
+		break;
+	case 'Y':
+		scene->rotate('Y');
+		break;
+	case 'Z':
+		scene->rotate('Z');
+		break;
 	}
+	glutPostRedisplay();
 }
 
 void catchKey(int key, int x, int y) {
 	printf("CATCH KEY\n");
 	switch (key) {
 	case GLUT_KEY_LEFT:
-		scene->move();
+		scene->scale('l');
 		break;
 	case GLUT_KEY_RIGHT:
-		scene->move();
+		scene->scale('r');
 		break;
 	case GLUT_KEY_UP:
-		scene->move();
+		scene->scale('u');
 		break;
 	case GLUT_KEY_DOWN:
-		scene->move();
+		scene->scale('d');
 		break;
 	}
+	glutPostRedisplay();
 }
 
 
@@ -141,10 +165,7 @@ void mouse(int button, int state, int x, int y)
 		mb_down = (state == GLUT_UP) ? 0 : 1;
 		break;
 	}
-
-	// add your code
-	//reshape(200, 200);
-	//display();
+	glutPostRedisplay();
 }
 
 void motion(int x, int y)
@@ -157,9 +178,9 @@ void motion(int x, int y)
 	// update last x,y
 	last_x = x;
 	last_y = y;
-	//reshape(800, 300);
 
-	scene->scale(dx, dy);
+	scene->move(dx, dy);
+	glutPostRedisplay();
 }
 
 void fileMenu(int id)
@@ -191,7 +212,7 @@ void mainMenu(int id)
 		scene->addPrim();
 		break;
 	case MAIN_STEP:
-		scene->step = stoi(dialogBox());
+		scene->step = stof(dialogBox());
 	}
 }
 
@@ -227,8 +248,16 @@ void modelMenu(int id) {
 		break;
 	case MODEL_BBOX:
 		scene->bbox();
-	case MODEL_ROTATE:
-		scene->rotate();
+		break;
+	case MODEL_UNBBOX:
+		scene->unbbox();
+		break;
+	case MODEL_WFRAME:
+		scene->wframe();
+		break;
+	case MODEL_MFRAME:
+		scene->mframe();
+		break;
 	}
 }
 
@@ -247,8 +276,11 @@ void initMenu()
 	glutAddMenuEntry("Set Active", MODEL_ACTIVE);
 	glutAddMenuEntry("Normals per Vertex", MODEL_NORMAL_V);
 	glutAddMenuEntry("Normals per Face", MODEL_NORMAL_F);
-	glutAddMenuEntry("Bounding Box", MODEL_BBOX);
-	glutAddMenuEntry("Rotate", MODEL_ROTATE);
+	glutAddMenuEntry("Add Bounding Box", MODEL_BBOX);
+	glutAddMenuEntry("Remove Bounding Box", MODEL_UNBBOX);
+	glutAddMenuEntry("World Frame", MODEL_WFRAME);
+	glutAddMenuEntry("Model Frame", MODEL_MFRAME);
+
 
 	glutCreateMenu(mainMenu);
 	glutAddSubMenu("File", menuFile);

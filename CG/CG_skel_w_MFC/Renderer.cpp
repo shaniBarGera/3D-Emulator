@@ -21,7 +21,22 @@ GLfloat get_max_of_y(const vector<vec3>* vertices) {
 	}
 	return max;
 }
+GLfloat get_max_of_z(const vector<vec3>* vertices) {
+	GLfloat max = 0;
+	for (int i = 0; i < vertices->size() - 1; i++) {
+		if ((*vertices)[i].z >= max) max = (*vertices)[i].z;
+	}
+	return max;
+}
 
+GLfloat get_min_of_z(const vector<vec3>* vertices) {
+	GLfloat min = 10000;
+	for (int i = 0; i < vertices->size() - 1; i++) {
+		if ((*vertices)[i].z <= min) min = (*vertices)[i].z;
+	}
+
+	return min;
+}
 GLfloat get_min_of_x(const vector<vec3>* vertices) {
 	GLfloat min = 10000;
 	for (int i = 0; i < vertices->size() - 1; i++) {
@@ -89,6 +104,7 @@ void Renderer::SetDemoBuffer()
 }
 
 void Renderer::setPixelOn(int x, int y) {
+	if (x < 0 || x >= m_width || y < 0 || y >= m_height) return;
 	m_outBuffer[INDEX(m_width - 1, x, y, 0)] = 1;
 	m_outBuffer[INDEX(m_width - 1, x, y, 1)] = 0;
 	m_outBuffer[INDEX(m_width - 1, x, y, 2)] = 0;
@@ -153,40 +169,48 @@ void Renderer::Drawline(int x1, int x2, int y1, int y2) {
 }
 
 void Renderer::DrawTriangles(const vector<vec3>* vertices, const vector<vec3>* normals) {
-	vec4 a = vec4((m_width-1)/(get_max_of_x(vertices) - get_min_of_x(vertices))  , 0, 0, 0);
-	vec4 b = vec4(0, (m_height-1)/(get_max_of_y(vertices) - get_min_of_y(vertices)) , 0, 0);
+	printf("DRAW TRIANGLE\n");
+	GLfloat min_x = get_min_of_x(vertices);
+	GLfloat min_y = get_min_of_y(vertices);
+	GLfloat min_z = 0.0; // get_min_of_z(vertices);
+	GLfloat max_x = get_max_of_x(vertices);
+	GLfloat max_y = get_max_of_y(vertices);
+	GLfloat max_z = 0.0; //get_max_of_z(vertices);
+
+	vec4 a = vec4((m_width-1)/(max_x - min_x)  , 0, 0, 0);
+	vec4 b = vec4(0, (m_height-1)/(max_y - min_y) , 0, 0);
 	vec4 c = vec4(0, 0, 1, 0);
 	vec4 d = vec4(0, 0, 0, 1);
 	WTransform = mat4(a, b, c, d);
-	//vec4 e = vec4(1, 0, 0, -(get_min_of_x(vertices)));
-	//vec4 f = vec4(0, 1, 0, -(get_min_of_y(vertices)));
-	//vec4 g = vec4(0, 0, 1, 0);
-	//vec4 h = vec4(0, 0, 0, 1);
-	//mat4 _world_transform = mat4(e, f, g, h);
-	//GLfloat max_x = get_max_of_x(vertices);
-	//GLfloat max_y = get_max_of_y(vertices);
-	//GLfloat min_x = get_min_of_x(vertices);
-	//GLfloat min_y = get_min_of_y(vertices);
-	
+
+	min_x = INFINITY;
+	min_y = INFINITY;
+	min_z = INFINITY;
+	max_x = -INFINITY;
+	max_y = -INFINITY;
+	max_z = -INFINITY;
+
 	for (int i = 0; i < vertices->size()-1; i+=3)
 	{
-		//vec4 v = ((*vertices)[i], 0);
 		
-		int x[3] = { 0 };
-		int y[3] = { 0 };
+		GLfloat x[3] = { 0 };
+		GLfloat y[3] = { 0 };
+		GLfloat z[3] = { 0 };
 		for (int j = 0; j < 3; j++) {
-			vec4 temp = WTransform*OTransform*vec4((*vertices)[i + j]);
+			// model view
+			vec4 temp = WTransform * MTransform * vec4((*vertices)[i + j]);
+			// scale
+			temp = S * temp;
+			x[j] = temp.x/temp.w;
+			y[j] = temp.y/temp.w;
+			z[j] = temp.z/temp.w;
 
-			x[j] = 0.1*temp.x/temp.w;
-			y[j] = 0.1*temp.y / temp.w;
-			//x[j] = normal((*vertices)[i + j].x, 0, m_width - 1, min_x, max_x);
-			//y[j] = normal((*vertices)[i + j].y, 0, m_height - 1, min_y, max_y);
-			// translate v to (x,y,z,1)
-			// v = Projection * CTransfrom^(-1) * OTransfrom * Vtranslated
-			
-			// lookAt(eye, curr_v, up)
-			//x[j] = v.x;
-			//y[j] = v.y;
+			max_x = (x[j] >= max_x) ? x[j] : max_x;
+			max_y = (y[j] >= max_y) ? y[j] : max_y;
+			max_z = (z[j] >= max_z) ? z[j] : max_z;
+			min_x = (x[j] <= min_x) ? x[j] : min_x;
+			min_y = (y[j] <= min_y) ? y[j] : min_y;
+			min_z = (z[j] >= min_z) ? z[j] : min_z;
 		}
 
 		Drawline(x[0], x[1], y[0], y[1]);
@@ -311,22 +335,13 @@ void Renderer::SetCameraTransform(const mat4& cTransform) {
 void Renderer::SetProjection(const mat4& projection) {
 	Projection = projection;
 }
-void Renderer::SetObjectMatrices(const mat4& oTransform, const mat3& nTransform) {
-	OTransform = oTransform;
+void Renderer::SetObjectMatrices(const mat4& mTransform, const mat4& wTransform, const mat3& nTransform) {
+	MTransform = mTransform;
 	NTransform = nTransform;
-
-
+	WTransform = wTransform;
 }
 
 void Renderer::Init() {
 	ClearColorBuffer();
 	ClearDepthBuffer();
-	vec4 a = vec4(1.0, 0.0, 0.0, 0.0);
-	vec4 b = vec4(0.0, 1.0, 0.0, 0.0);
-	vec4 c = vec4(0.0, 0.0, 1.0, 0.0);
-	vec4 d = vec4(0.0, 0.0, 0.0, 1.0);
-	CTransform = mat4(a, b, c, d);
-	OTransform = mat4(a, b, c, d);
-	Projection = mat4(a, b, c, d);
-	//NTransform = mat4(a, b, c, d);
 }

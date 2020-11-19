@@ -165,7 +165,7 @@ void MeshModel::loadFile(string fileName)
 	vec4 b = vec4(0, 1, 0, -(get_min_y(&vertex_positions)));
 	vec4 c = vec4(0, 0, 1, 0);
 	vec4 d = vec4(0, 0, 0, 1);
-	_world_transform = mat4(a,b,c,d);
+	m_transform = mat4(a,b,c,d);
 }
 
 
