@@ -172,23 +172,15 @@ void Renderer::DrawTriangles(const vector<vec3>* vertices, const vector<vec3>* n
 	printf("DRAW TRIANGLE\n");
 	GLfloat min_x = get_min_of_x(vertices);
 	GLfloat min_y = get_min_of_y(vertices);
-	GLfloat min_z = 0.0; // get_min_of_z(vertices);
+	//GLfloat min_z = 0.0; // get_min_of_z(vertices);
 	GLfloat max_x = get_max_of_x(vertices);
 	GLfloat max_y = get_max_of_y(vertices);
-	GLfloat max_z = 0.0; //get_max_of_z(vertices);
+	//GLfloat max_z = 0.0; //get_max_of_z(vertices);
 
-	vec4 a = vec4((m_width-1)/(max_x - min_x)  , 0, 0, 0);
-	vec4 b = vec4(0, (m_height-1)/(max_y - min_y) , 0, 0);
-	vec4 c = vec4(0, 0, 1, 0);
-	vec4 d = vec4(0, 0, 0, 1);
-	WTransform = mat4(a, b, c, d);
+	WTransform[0][0] = (m_width - 1) / (max_x - min_x);
+	WTransform[1][1] = (m_height - 1) / (max_y - min_y);
 
-	min_x = INFINITY;
-	min_y = INFINITY;
-	min_z = INFINITY;
-	max_x = -INFINITY;
-	max_y = -INFINITY;
-	max_z = -INFINITY;
+	
 
 	for (int i = 0; i < vertices->size()-1; i+=3)
 	{
@@ -197,20 +189,17 @@ void Renderer::DrawTriangles(const vector<vec3>* vertices, const vector<vec3>* n
 		GLfloat y[3] = { 0 };
 		GLfloat z[3] = { 0 };
 		for (int j = 0; j < 3; j++) {
-			// model view
 			vec4 temp = WTransform * MTransform * vec4((*vertices)[i + j]);
-			// scale
-			temp = S * temp;
+
+			// camera transform
+			// mat4 c = transpose(CTransform);
+			
+			mat4 c = CTransform;
+			temp = Projection * c * temp;
+		
+			// final result
 			x[j] = temp.x/temp.w;
 			y[j] = temp.y/temp.w;
-			z[j] = temp.z/temp.w;
-
-			max_x = (x[j] >= max_x) ? x[j] : max_x;
-			max_y = (y[j] >= max_y) ? y[j] : max_y;
-			max_z = (z[j] >= max_z) ? z[j] : max_z;
-			min_x = (x[j] <= min_x) ? x[j] : min_x;
-			min_y = (y[j] <= min_y) ? y[j] : min_y;
-			min_z = (z[j] >= min_z) ? z[j] : min_z;
 		}
 
 		Drawline(x[0], x[1], y[0], y[1]);

@@ -24,10 +24,11 @@ public:
 	mat4 projection;
 
 	Camera();
+	Camera(vec3 v);
 	~Camera() {}
 	void setTransformation(const mat4& transform);
-	mat4 LookAt(const vec4& eye, const vec4& at, const vec4& up);
-	mat4 Ortho(const float left, const float right,
+	void LookAt(const vec4& eye, const vec4& at, const vec4& up);
+	void Ortho(const float left, const float right,
 		const float bottom, const float top,
 		const float zNear, const float zFar);
 	mat4 Frustum(const float left, const float right,
@@ -62,7 +63,7 @@ public:
 	void showNormalsV();
 	void showNormalsF();
 	void addPrim();
-	void addCam(string s);
+	void addCam(string s, vec3 v);
 	void render();
 	void rotate(char cord);
 	void zoomIn();
@@ -71,9 +72,6 @@ public:
 	void unbbox();
 	void focus();
 	void scale(char dir);
-	void movex(char dir);
 	void move(int dx, int dy);
-	void wframe();
-	void mframe();
 	
 };

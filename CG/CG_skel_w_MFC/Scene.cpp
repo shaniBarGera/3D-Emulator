@@ -65,7 +65,7 @@ Scene::Scene() {
 	Camera* cam = new Camera();
 	cameras.push_back(cam);
 	activeModel = -1;
-	step = 0.01;
+	step = 0.1;
 	printf("EMPTY SCENE\n");
 
 }
@@ -76,9 +76,7 @@ Scene::Scene(Renderer* renderer) {
 	Camera* cam = new Camera();
 	cameras.push_back(cam);
 	activeModel = -1;
-	step = 0.01;
-	printf("SCENE %d %d\n", m_renderer->m_width, m_renderer->m_height);
-
+	step = 0.1;
 }
 
 Scene::~Scene() {
@@ -206,18 +204,6 @@ void Scene::rotate(char cord) {
 	model->m_transform = temp * model->m_transform;
 }
 
-void Scene::zoomIn() { // TODO
-	mat4 temp = Scale(vec3(step, step, step));
-	temp[3][3] = 0.0;
-	m_renderer->S += temp;
-}
-
-void Scene::zoomOut() { // TODO
-	mat4 temp = Scale(vec3(step, step, step));
-	temp[3][3] = 0.0;
-	m_renderer->S -= temp;
-}
-
 void Scene::scale(char dir) {
 	printf("SCALE\n");
 	MeshModel* model = (MeshModel*)models[activeModel];
@@ -242,46 +228,36 @@ void Scene::scale(char dir) {
 	model->m_transform *= temp;
 }
 
+void Scene::zoomIn() {
+
+	//focus();
+	Camera* cam = (Camera*)cameras[activeCamera];
+	mat4 temp;
+
+	temp[0][0] += step;
+	temp[1][1] += step;
+	
+	cam->cTransform *= temp;
+}
+
+void Scene::zoomOut() {
+	//focus();
+	Camera* cam = (Camera*)cameras[activeCamera];
+	mat4 temp;
+
+	temp[0][0] -= step;
+	temp[1][1] -= step;
+
+	cam->cTransform *= temp;
+}
+
 void Scene::move(int dx, int dy) {
 	printf("MOVE\n");
 	MeshModel* model = (MeshModel*)models[activeModel];
-	print(model->m_transform);
-	model->m_transform[0][3] += step * dx;
-	model->m_transform[1][3] -= step * dy;
-	print(model->m_transform);
+	model->_world_transform[0][3] += step * dx;
+	model->_world_transform[1][3] -= step * dy;
 }
 
-void Scene::movex(char dir) {
-	printf("MOVE\n");
-	MeshModel* model = (MeshModel*)models[activeModel];
-	mat4 temp(0.0);
-	GLfloat curr_step = step;
-
-	switch (dir) {
-	case 'l':
-		temp[0][3] = -curr_step;
-		break;
-	case 'r':
-		temp[0][3] = curr_step;
-		break;
-	case 'u':
-		temp[1][3] = curr_step;
-		break;
-	case 'd':
-		temp[1][3] = -curr_step;
-		break;
-	}
-	model->m_transform += temp;
-}
-
-void Scene::wframe() {
-	MeshModel* model = (MeshModel*)models[activeModel];
-	model->_world_transform = Translate((m_renderer->m_width / 2) + 1, (m_renderer->m_height / 2) + 1, 0.0);
-}
-void Scene::mframe() {
-	MeshModel* model = (MeshModel*)models[activeModel];
-	model->_world_transform = mat4();
-}
 //-------------------------------------ADD TO SCENE--------------------------------------------//
 
 void Scene::addPrim() {
@@ -289,20 +265,26 @@ void Scene::addPrim() {
 	MeshModel* model = new PrimMeshModel();
 	models.push_back(model);
 	activeModel = models.size() - 1;
-
 }
-void Scene::addCam(string s) {
-	Camera* cam = new Camera();
+
+void Scene::addCam(string cmd, vec3 v) {
+	Camera* cam = new Camera(v);
 	cameras.push_back(cam);
 	activeCamera = cameras.size() - 1;
 }
 
 
 void Scene::render() {
-
+	// Allow the user to choose if the cameras should be rendered (as a small plus sign for example)
 }
 
 void Scene::focus() {
+	MeshModel* model = (MeshModel*)models[activeModel];
+	Camera* cam = (Camera*)cameras[activeCamera];
+	vec3 eye(0, 1, 3);
+	vec3 at(model->m_transform[0][3], model->m_transform[1][3], model->m_transform[3][3]);
+	vec3 up(0, 3, 0);
+	cam->LookAt(eye, at, up);
 }
 
 /*--------------------------------------------------------------------*/
@@ -311,39 +293,43 @@ void Scene::focus() {
 
 
 
-mat4 Camera::LookAt(const vec4& eye, const vec4& at, const vec4& up)
+void Camera::LookAt(const vec4& eye, const vec4& at, const vec4& up)
 {
 	vec4 n = normalize(eye - at);
 	vec4 u = normalize(cross(up, n));
 	vec4 v = normalize(cross(n, u));
 	vec4 t = vec4(0.0, 0.0, 0.0, 1.0);
 	mat4 c = mat4(u, v, n, t);
-	return c * Translate(-eye);
+	cTransform =  c * Translate(-eye);
 }
 
 Camera::Camera()
 {
-	projection = (1, 0, 0, 0,
-				  0, 1, 0, 0,
-				  0, 0, 0, 0,
-				  0, 0, 0, 1); // orthogonal
+	vec3 eye(0, 1, 3);
+	vec3 at(0, 0, 0);
+	vec3 up(0, 3, 0);
+	//LookAt(eye, at, up);
+	//Ortho(0, 1, 0, 1, 0,)
+}
 
-	cTransform = (1, 0, 0, 0,
-				  0, 1, 0, 0,
-				  0, 0, 1, 0,
-				  0, 0, 0, 1);
+Camera::Camera(vec3 v)
+{
+	vec3 eye(0, 1, 3);
+	vec3 at = v;
+	vec3 up(0, 3, 0);
+	//LookAt(eye, at, up);
 }
 
 void Camera::setTransformation(const mat4& transform) {
 	cTransform *= transform;
 }
 
-mat4 Camera::Ortho(const float left, const float right, const float bottom, const float top, const float zNear, const float zFar) {
+void Camera::Ortho(const float left, const float right, const float bottom, const float top, const float zNear, const float zFar) {
 	vec4 a = vec4(-(2 / (right - left)), 0.0, 0.0, 1.0);
 	vec4 b = vec4(0.0, 2 / (top - bottom), 0.0, 1.0);
 	vec4 c = vec4(0.0, 0.0, -2 / (zFar - zNear), 1.0);
 	vec4 d = vec4(-(right + left) / (right - left), -(top + bottom) / (top - bottom), -(zFar + zNear) / (zFar - zNear), 1.0);
-	return mat4(a, b, c, d);
+	projection = mat4(a, b, c, d);
 }
 
 

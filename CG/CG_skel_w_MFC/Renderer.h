@@ -10,6 +10,7 @@ class Renderer
 {
 	float *m_outBuffer; // 3*width*height
 	float *m_zbuffer; // width*height
+	int m_width, m_height;
 	
 	mat4 CTransform;
 	mat4 MTransform;
@@ -29,8 +30,7 @@ class Renderer
 	void InitOpenGLRendering();
 	//////////////////////////////
 public:
-	mat4 S;
-	int m_width, m_height;
+	
 	Renderer();
 	Renderer(int width, int height);
 	~Renderer(void);

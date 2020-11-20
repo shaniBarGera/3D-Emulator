@@ -54,6 +54,11 @@ Renderer* renderer;
 int last_x, last_y;
 bool lb_down, rb_down, mb_down;
 
+struct ans {
+	string cmd = "";
+	vec3 v;
+};
+
 //--------------------------------------------------------------------------
 // Helpers
 
@@ -65,6 +70,14 @@ string dialogBox() {
 	return "";
 }
 
+ans dialogBoxVec(){
+	CCmdXyzDialog dlg;
+	ans a;
+	if (dlg.DoModal() == IDOK)
+		a.cmd = dlg.GetCmd();
+		a.v = dlg.GetXYZ();
+	return a;
+}
 
 //----------------------------------------------------------------------------
 // Callbacks
@@ -217,10 +230,12 @@ void mainMenu(int id)
 }
 
 void camMenu(int id) {
+	ans a;
 	switch (id)
 	{
 	case CAM_ADD:
-		scene->addCam(dialogBox());
+		a = dialogBoxVec();
+		scene->addCam(a.cmd, a.v);
 		break;
 	case CAM_REND:
 		scene->render();
@@ -251,12 +266,6 @@ void modelMenu(int id) {
 		break;
 	case MODEL_UNBBOX:
 		scene->unbbox();
-		break;
-	case MODEL_WFRAME:
-		scene->wframe();
-		break;
-	case MODEL_MFRAME:
-		scene->mframe();
 		break;
 	}
 }
