@@ -419,4 +419,9 @@ vec3 cross(const vec4& a, const vec4& b )
 		 a.x * b.y - a.y * b.x );
 }
 
+
+inline 
+void print(const vec4& v) {
+    printf("%f %f %f %f\n", v.x, v.y, v.z, v.w);
+}
 //----------------------------------------------------------------------------

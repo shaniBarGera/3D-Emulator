@@ -502,12 +502,81 @@ mat4 matrixCompMult( const mat4& A, const mat4& B ) {
 }
 
 inline
-mat4 transpose( const mat4& A ) {
-    return mat4( A[0][0], A[1][0], A[2][0], A[3][0],
-		 A[0][1], A[1][1], A[2][1], A[3][1],
-		 A[0][2], A[1][2], A[2][2], A[3][2],
-		 A[0][3], A[1][3], A[2][3], A[3][3] );
+void print(const mat4& m) {
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            printf("%f ", m[i][j]);
+        }
+        printf("\n");
+    }
+    printf("\n");
 }
+
+inline
+mat4 transpose( const mat4& A ) {
+    return mat4( A[0][0], A[0][1], A[0][2], A[0][3],
+		 A[1][0], A[1][1], A[1][2], A[1][3],
+		 A[2][0], A[2][1], A[2][2], A[2][3],
+		 A[3][0], A[3][1], A[3][2], A[3][3] );
+}
+
+inline
+mat4 inverse(const mat4& A) {
+    int n = 4;
+    mat4 inverted_A = A;
+
+    for (int i = 0; i < n; i++) {
+        // Search for maximum in this column
+        GLfloat maxEl = abs(inverted_A[i][i]);
+        int maxRow = i;
+        for (int k = i + 1; k < n; k++) {
+            if (abs(A[k][i]) > maxEl) {
+                maxEl = inverted_A[k][i];
+                maxRow = k;
+            }
+        }
+
+        // Swap maximum row with current row (column by column)
+        for (int k = i; k < 2 * n; k++) {
+            GLfloat tmp = A[maxRow][k];
+            inverted_A[maxRow][k] = inverted_A[i][k];
+            inverted_A[i][k] = tmp;
+        }
+
+        // Make all rows below this one 0 in current column
+        for (int k = i + 1; k < n; k++) {
+            GLfloat c = -inverted_A[k][i] / inverted_A[i][i];
+            for (int j = i; j < 2 * n; j++) {
+                if (i == j) {
+                    inverted_A[k][j] = 0;
+                }
+                else {
+                    inverted_A[k][j] += c * inverted_A[i][j];
+                }
+            }
+        }
+    }
+
+    // Solve equation Ax=b for an upper triangular matrix A
+    for (int i = n - 1; i >= 0; i--) {
+        for (int k = n; k < 2 * n; k++) {
+            inverted_A[i][k] /= inverted_A[i][i];
+        }
+        // this is not necessary, but the output looks nicer:
+        inverted_A[i][i] = 1;
+
+        for (int rowModify = i - 1; rowModify >= 0; rowModify--) {
+            for (int columModify = n; columModify < 2 * n; columModify++) {
+                inverted_A[rowModify][columModify] -= inverted_A[i][columModify]
+                    * inverted_A[rowModify][i];
+            }
+            // this is not necessary, but the output looks nicer:
+            inverted_A[rowModify][i] = 0;
+        }
+    }
+    return inverted_A;
+}
+
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -622,15 +691,6 @@ mat4 Scale( const vec3& v )
     return Scale( v.x, v.y, v.z );
 }
 
-inline
-void print(const mat4& m) {
-    for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 4; ++j) {
-            printf("%f ", m[i][j]);
-        }
-        printf("\n");
-    }
-    printf("\n");
-}
+
 
 //----------------------------------------------------------------------------

@@ -27,17 +27,14 @@
 #define BUFFER_OFFSET( offset )   ((GLvoid*) (offset))
 
 #define CAM_ADD 1
-#define CAM_TRANS 2
-#define CAM_REND 3
-#define CAM_ACTIVE 4
-#define CAM_FOCUS 5
+#define CAM_REND 2
+#define CAM_ACTIVE 3
 
 #define FILE_OPEN 1
 
 #define MAIN_DEMO 1
 #define MAIN_ABOUT 2
 #define MAIN_PRIM 3
-#define MAIN_STEP 4
 
 #define MODEL_ACTIVE 1
 #define MODEL_NORMAL_V 2
@@ -46,6 +43,12 @@
 #define MODEL_UNBBOX 5
 #define MODEL_WFRAME 6
 #define MODEL_MFRAME 7
+#define MODEL_XNORMAL_V 8
+#define MODEL_XNORMAL_F 9
+
+#define STEP_ROTATE 1
+#define STEP_SCALE 2
+#define STEP_MOVE 3
 
 
 Scene* scene;
@@ -53,11 +56,6 @@ Renderer* renderer;
 
 int last_x, last_y;
 bool lb_down, rb_down, mb_down;
-
-struct ans {
-	string cmd = "";
-	vec3 v;
-};
 
 //--------------------------------------------------------------------------
 // Helpers
@@ -70,13 +68,12 @@ string dialogBox() {
 	return "";
 }
 
-ans dialogBoxVec(){
+vec3 dialogBoxVec(){
 	CCmdXyzDialog dlg;
-	ans a;
+	vec3 v;
 	if (dlg.DoModal() == IDOK)
-		a.cmd = dlg.GetCmd();
-		a.v = dlg.GetXYZ();
-	return a;
+		v = dlg.GetXYZ();
+	return v;
 }
 
 //----------------------------------------------------------------------------
@@ -107,6 +104,10 @@ void keyboard(unsigned char key, int x, int y)
 		printf("EXIT\n");
 		exit(EXIT_SUCCESS);
 		break;
+	
+	case '*':
+		scene->focus();
+		break;
 	case '+':
 		printf("PLUS\n");
 		scene->zoomIn();
@@ -115,6 +116,7 @@ void keyboard(unsigned char key, int x, int y)
 		printf("MINUS\n");
 		scene->zoomOut();
 		break;
+	
 	case 'x':
 		scene->rotate('x');
 		break;
@@ -151,6 +153,12 @@ void catchKey(int key, int x, int y) {
 		break;
 	case GLUT_KEY_DOWN:
 		scene->scale('d');
+		break;
+	case GLUT_KEY_HOME:
+		scene->scale('z');
+		break;
+	case GLUT_KEY_END:
+		scene->scale('Z');
 		break;
 	}
 	glutPostRedisplay();
@@ -224,32 +232,36 @@ void mainMenu(int id)
 	case MAIN_PRIM:
 		scene->addPrim();
 		break;
-	case MAIN_STEP:
-		scene->step = stof(dialogBox());
 	}
 }
 
 void camMenu(int id) {
-	ans a;
+	vec3 eye, at, up;
+	string cmd = "";
 	switch (id)
 	{
 	case CAM_ADD:
-		a = dialogBoxVec();
-		scene->addCam(a.cmd, a.v);
+		eye = dialogBoxVec();
+		at = dialogBoxVec();
+		up = dialogBoxVec();
+		scene->addCam(cmd, eye, at, up);
 		break;
 	case CAM_REND:
 		scene->render();
 		break;
-	case CAM_FOCUS:
-		scene->focus();
-		break;
 	case CAM_ACTIVE:
-		scene->activeCamera = stoi(dialogBox());
+		int curr_cam = stoi(dialogBox());
+		while (curr_cam < 0 || curr_cam >= scene->cameras.size()) {
+			AfxMessageBox(_T("Out of range"));
+			curr_cam = stoi(dialogBox());
+		}
+		scene->activeCamera = curr_cam;
 		break;
 	}
 }
 
 void modelMenu(int id) {
+	int curr_model;
 	switch (id)
 	{
 	case MODEL_NORMAL_V:
@@ -258,14 +270,40 @@ void modelMenu(int id) {
 	case MODEL_NORMAL_F:
 		scene->showNormalsF();
 		break;
+	case MODEL_XNORMAL_V:
+		scene->removeNormalsV();
+		break;
+	case MODEL_XNORMAL_F:
+		scene->removeNormalsF();
+		break;
 	case MODEL_ACTIVE:
-		scene->activeModel = stoi(dialogBox());
+		curr_model = stoi(dialogBox());
+		while (curr_model < 0 || curr_model >= scene->models.size()) {
+			AfxMessageBox(_T("Out of range"));
+			curr_model = stoi(dialogBox());
+		}
+		scene->activeCamera = curr_model;
+		scene->activeModel = curr_model;
 		break;
 	case MODEL_BBOX:
 		scene->bbox();
 		break;
 	case MODEL_UNBBOX:
 		scene->unbbox();
+		break;
+	}
+}
+
+void stepMenu(int id) {
+	switch (id) {
+	case STEP_ROTATE:
+		scene->step_rotate = stof(dialogBox());
+		break;
+	case STEP_SCALE:
+		scene->step_scale = stof(dialogBox());
+		break;
+	case STEP_MOVE:
+		scene->step_move = stof(dialogBox());
 		break;
 	}
 }
@@ -277,30 +315,33 @@ void initMenu()
 
 	int camFile = glutCreateMenu(camMenu);
 	glutAddMenuEntry("Add", CAM_ADD);
-	glutAddMenuEntry("Render", CAM_REND);
 	glutAddMenuEntry("Set Active", CAM_ACTIVE);
-	glutAddMenuEntry("Focus on active model", CAM_FOCUS);
+	glutAddMenuEntry("Render", CAM_REND);
 
 	int modelFile = glutCreateMenu(modelMenu);
 	glutAddMenuEntry("Set Active", MODEL_ACTIVE);
-	glutAddMenuEntry("Normals per Vertex", MODEL_NORMAL_V);
 	glutAddMenuEntry("Normals per Face", MODEL_NORMAL_F);
+	glutAddMenuEntry("Normals per Vertex", MODEL_NORMAL_V);
+	glutAddMenuEntry("Remove Normals per Face", MODEL_XNORMAL_F);
+	glutAddMenuEntry("Remove Normals per Vertex", MODEL_XNORMAL_V);
 	glutAddMenuEntry("Add Bounding Box", MODEL_BBOX);
 	glutAddMenuEntry("Remove Bounding Box", MODEL_UNBBOX);
-	glutAddMenuEntry("World Frame", MODEL_WFRAME);
-	glutAddMenuEntry("Model Frame", MODEL_MFRAME);
 
+
+	int stepFile = glutCreateMenu(stepMenu);
+	glutAddMenuEntry("Rotate", STEP_ROTATE);
+	glutAddMenuEntry("Scale", STEP_SCALE);
+	glutAddMenuEntry("Move", STEP_MOVE);
 
 	glutCreateMenu(mainMenu);
 	glutAddSubMenu("File", menuFile);
-	glutAddSubMenu("Camera", camFile);
+	glutAddMenuEntry("Add Primitve", MAIN_PRIM);
 	glutAddSubMenu("Model", modelFile);
-
+	glutAddSubMenu("Camera", camFile);
+	glutAddSubMenu("Set Step Size", stepFile);
 	glutAddMenuEntry("Demo", MAIN_DEMO);
 	glutAddMenuEntry("About", MAIN_ABOUT);
-	glutAddMenuEntry("Add Primitve", MAIN_PRIM);
-	glutAddMenuEntry("Set Step Size", MAIN_STEP);
-
+	
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
 //----------------------------------------------------------------------------

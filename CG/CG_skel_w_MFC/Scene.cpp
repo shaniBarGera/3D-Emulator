@@ -6,58 +6,6 @@
 
 using namespace std;
 
-//-------------------------------------HELPERS--------------------------------------------//
-
-GLfloat max_of_x(const vector<vec3>* vertices) {
-	GLfloat max = 0;
-	for (size_t i = 0; i < vertices->size() - 1; i++) {
-		if ((*vertices)[i].x >= max) max = (*vertices)[i].x;
-	}
-	return max;
-}
-
-GLfloat max_of_y(const vector<vec3>* vertices) {
-	GLfloat max = 0;
-	for (int i = 0; i < vertices->size() - 1; i++) {
-		if ((*vertices)[i].y >= max) max = (*vertices)[i].y;
-	}
-	return max;
-}
-
-GLfloat max_of_z(const vector<vec3>* vertices) {
-	GLfloat max = 0;
-	for (size_t i = 0; i < vertices->size() - 1; i++) {
-		if ((*vertices)[i].z >= max) max = (*vertices)[i].z;
-	}
-	return max;
-}
-
-GLfloat min_of_z(const vector<vec3>* vertices) {
-	GLfloat min = 10000;
-	for (int i = 0; i < vertices->size() - 1; i++) {
-		if ((*vertices)[i].z <= min) min = (*vertices)[i].z;
-	}
-
-	return min;
-}
-
-GLfloat min_of_x(const vector<vec3>* vertices) {
-	GLfloat min = 10000;
-	for (int i = 0; i < vertices->size() - 1; i++) {
-		if ((*vertices)[i].x <= min) min = (*vertices)[i].x;
-	}
-
-	return min;
-}
-
-GLfloat min_of_y(const vector<vec3>* vertices) {
-	GLfloat min = 10000;
-	for (int i = 0; i < vertices->size() - 1; i++) {
-		if ((*vertices)[i].y <= min) min = (*vertices)[i].y;
-	}
-	return min;
-}
-
 
 //-------------------------------------CTRS--------------------------------------------//
 Scene::Scene() {
@@ -65,7 +13,9 @@ Scene::Scene() {
 	Camera* cam = new Camera();
 	cameras.push_back(cam);
 	activeModel = -1;
-	step = 0.1;
+	step_move = 1;
+	step_rotate = 10;
+	step_scale = 0.1;
 	printf("EMPTY SCENE\n");
 
 }
@@ -76,7 +26,9 @@ Scene::Scene(Renderer* renderer) {
 	Camera* cam = new Camera();
 	cameras.push_back(cam);
 	activeModel = -1;
-	step = 0.1;
+	step_move = 1;
+	step_rotate = 10;
+	step_scale = 0.1;
 }
 
 Scene::~Scene() {
@@ -101,7 +53,8 @@ void Scene::draw()
 		 MeshModel* model = (MeshModel*)models[i];
 		 m_renderer->SetProjection(cam->projection);
 		 m_renderer->SetCameraTransform(cam->cTransform);
-		 m_renderer->SetObjectMatrices(model->m_transform, model->_world_transform, model->_normal_transform);
+		 m_renderer->SetObjectMatrices(model->min_x, model->min_y, model->max_x, model->max_y,
+				model->m_transform, model->_world_transform, model->_normal_transform);
 		 m_renderer->DrawTriangles(&model->vertex_positions, &model->vertex_normal);
 	}
 	if (models.size() > 0) {
@@ -119,14 +72,22 @@ void Scene::drawDemo()
 //-------------------------------------NORMALS--------------------------------------------//
 
 void Scene::showNormalsV() {
-
+	m_renderer->show_normalsV = true;
 }
 
 void Scene::showNormalsF() {
-
+	m_renderer->show_normalsF = true;
 }
 
-//-------------------------------------BB0X--------------------------------------------//
+void Scene::removeNormalsV() {
+	m_renderer->show_normalsV = true;
+}
+
+void Scene::removeNormalsF() {
+	m_renderer->show_normalsF = true;
+}
+
+//-------------------------------------BBOX--------------------------------------------//
 
 void Scene::_add_line(Model* m, vec3 v1, vec3 v2, vec3 v3) {
 	MeshModel* model = (MeshModel*)m;
@@ -149,12 +110,12 @@ void Scene::bbox() {
 	MeshModel* model = (MeshModel*)models[activeModel];
 	if (model->bbox) return;
 
-	GLfloat min_x = min_of_x(&model->vertex_positions);
-	GLfloat min_y = min_of_y(&model->vertex_positions);
-	GLfloat min_z = min_of_z(&model->vertex_positions);
-	GLfloat max_x = max_of_x(&model->vertex_positions);
-	GLfloat max_y = max_of_y(&model->vertex_positions);
-	GLfloat max_z = max_of_x(&model->vertex_positions);
+	GLfloat min_x = model->min_x;
+	GLfloat min_y = model->min_y;
+	GLfloat min_z = model->min_z;
+	GLfloat max_x = model->max_x;
+	GLfloat max_y = model->max_y;
+	GLfloat max_z = model->max_z;
 
 	vec3 v000(min_x, min_y, min_z);
 	vec3 v100(max_x, min_y, min_z);
@@ -180,7 +141,7 @@ void Scene::rotate(char cord) {
 	printf("ROTATE\n");
 	MeshModel* model = (MeshModel*)models[activeModel];
 	mat4 temp;
-	GLfloat curr_step = 360 * step;
+	GLfloat curr_step = step_rotate;
 	switch (cord) {
 	case 'x':
 		temp = RotateX(curr_step);
@@ -201,14 +162,16 @@ void Scene::rotate(char cord) {
 		temp = RotateZ(-curr_step);
 		break;
 	}
+	print(model->m_transform);
 	model->m_transform = temp * model->m_transform;
+	print(model->m_transform);
 }
 
 void Scene::scale(char dir) {
-	printf("SCALE\n");
+	printf("SCALE %c\n", dir);
 	MeshModel* model = (MeshModel*)models[activeModel];
 	mat4 temp;
-	GLfloat curr_step = step;
+	GLfloat curr_step = step_scale;
 
 	switch (dir) {
 	case 'l':
@@ -223,39 +186,35 @@ void Scene::scale(char dir) {
 	case 'd':
 		temp[1][1] -= curr_step;
 		break;
+	case 'z':
+		temp[2][2] += curr_step;
+		break;
+	case 'Z':
+		temp[2][2] -= curr_step;
+		break;
 	}
-	print(temp);
 	model->m_transform *= temp;
 }
 
 void Scene::zoomIn() {
-
 	//focus();
 	Camera* cam = (Camera*)cameras[activeCamera];
-	mat4 temp;
-
-	temp[0][0] += step;
-	temp[1][1] += step;
-	
-	cam->cTransform *= temp;
+	mat4 temp = Scale(vec3(1 + step_scale, 1 + step_scale, 1 + step_scale));
+	cam->cTransform = temp * cam->cTransform;
 }
 
 void Scene::zoomOut() {
 	//focus();
 	Camera* cam = (Camera*)cameras[activeCamera];
-	mat4 temp;
-
-	temp[0][0] -= step;
-	temp[1][1] -= step;
-
-	cam->cTransform *= temp;
+	mat4 temp = Scale(vec3(1 - step_scale, 1 - step_scale, 1 - step_scale));
+	cam->cTransform = temp * cam->cTransform;
 }
 
 void Scene::move(int dx, int dy) {
 	printf("MOVE\n");
 	MeshModel* model = (MeshModel*)models[activeModel];
-	model->_world_transform[0][3] += step * dx;
-	model->_world_transform[1][3] -= step * dy;
+	model->_world_transform[0][3] += step_move * dx;
+	model->_world_transform[1][3] -= step_move * dy;
 }
 
 //-------------------------------------ADD TO SCENE--------------------------------------------//
@@ -267,8 +226,8 @@ void Scene::addPrim() {
 	activeModel = models.size() - 1;
 }
 
-void Scene::addCam(string cmd, vec3 v) {
-	Camera* cam = new Camera(v);
+void Scene::addCam(string cmd, vec3 eye, vec3 at, vec3 up) {
+	Camera* cam = new Camera(eye, at, up);
 	cameras.push_back(cam);
 	activeCamera = cameras.size() - 1;
 }
@@ -279,12 +238,13 @@ void Scene::render() {
 }
 
 void Scene::focus() {
+	printf("FOCUS\n");
 	MeshModel* model = (MeshModel*)models[activeModel];
 	Camera* cam = (Camera*)cameras[activeCamera];
-	vec3 eye(0, 1, 3);
-	vec3 at(model->m_transform[0][3], model->m_transform[1][3], model->m_transform[3][3]);
-	vec3 up(0, 3, 0);
-	cam->LookAt(eye, at, up);
+	mat4 temp = model->_world_transform * model->m_transform;
+	cam->at = vec3(temp[0][3], temp[1][3],temp[3][3]);
+	print(cam->at);
+	cam->LookAt(cam->eye, cam->at, cam->up);
 }
 
 /*--------------------------------------------------------------------*/
@@ -295,6 +255,15 @@ void Scene::focus() {
 
 void Camera::LookAt(const vec4& eye, const vec4& at, const vec4& up)
 {
+	printf("LOOK AT\n");
+
+	/*printf("eye: ");
+	print(eye);
+	printf("at: ");
+	print(at);
+	printf("up: ");
+	print(up);*/
+
 	vec4 n = normalize(eye - at);
 	vec4 u = normalize(cross(up, n));
 	vec4 v = normalize(cross(n, u));
@@ -305,19 +274,31 @@ void Camera::LookAt(const vec4& eye, const vec4& at, const vec4& up)
 
 Camera::Camera()
 {
-	vec3 eye(0, 1, 3);
-	vec3 at(0, 0, 0);
-	vec3 up(0, 3, 0);
-	//LookAt(eye, at, up);
-	//Ortho(0, 1, 0, 1, 0,)
+	printf("CAMERA CTR\n");
+
+	eye = vec3(0, 1, 3);
+	at = vec3(0, 0, 0);
+	up = vec3(0, 1, 0);
+	LookAt(eye, at, up);
+	//Ortho(1, 1, 1, 0, 1)
 }
 
-Camera::Camera(vec3 v)
+Camera::Camera(vec3 eye, vec3 at, vec3 up)
 {
-	vec3 eye(0, 1, 3);
-	vec3 at = v;
-	vec3 up(0, 3, 0);
-	//LookAt(eye, at, up);
+	printf("CAMERA CTR NEW\n");
+	this->eye = eye;
+	this->at = at;
+	this->up = up;
+
+	printf("eye: ");
+	print(eye);
+	printf("at: ");
+	print(at);
+	printf("up: ");
+	print(up);
+
+	LookAt(eye, at, up);
+	//projection = Ortho();
 }
 
 void Camera::setTransformation(const mat4& transform) {

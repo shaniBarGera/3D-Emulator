@@ -22,6 +22,22 @@ GLfloat get_max_y(const vector<vec3>* vertices) {
 	return max;
 }
 
+GLfloat get_max_z(const vector<vec3>* vertices) {
+	GLfloat max = 0;
+	for (int i = 0; i < vertices->size() - 1; i++) {
+		if ((*vertices)[i].z >= max) max = (*vertices)[i].z;
+	}
+	return max;
+}
+
+GLfloat get_min_z(const vector<vec3>* vertices) {
+	GLfloat min = 10000;
+	for (int i = 0; i < vertices->size() - 1; i++) {
+		if ((*vertices)[i].z <= min) min = (*vertices)[i].z;
+	}
+	return min;
+}
+
 GLfloat get_min_x(const vector<vec3>* vertices) {
 	GLfloat min = 10000;
 	for (int i = 0; i < vertices->size() - 1; i++) {
@@ -159,11 +175,21 @@ void MeshModel::loadFile(string fileName)
 		for (int i = 0; i < 3; i++)
 		{
 			vertex_positions.push_back(vertices[it->v[i]-1]); //CHANGE
+			vertex_normal.push_back(vertices[it->vn[i] - 1]);
 		}
 	}
-	vec4 a = vec4(1,0,0,-(get_min_x(&vertex_positions)));
-	vec4 b = vec4(0, 1, 0, -(get_min_y(&vertex_positions)));
-	vec4 c = vec4(0, 0, 1, 0);
+
+	min_x = get_min_x(&vertex_positions);
+	min_y = get_min_y(&vertex_positions);
+	min_z = get_min_z(&vertex_positions);
+	max_z = get_max_z(&vertex_positions);
+	max_x = get_max_x(&vertex_positions);
+	max_y = get_max_y(&vertex_positions);
+
+
+	vec4 a = vec4(1, 0, 0, -((max_x+min_x)/2));
+	vec4 b = vec4(0, 1, 0, -((max_y+min_y)/2));
+	vec4 c = vec4(0, 0, 1, -((max_z+min_z)/2));
 	vec4 d = vec4(0, 0, 0, 1);
 	m_transform = mat4(a,b,c,d);
 }

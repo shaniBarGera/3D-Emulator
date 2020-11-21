@@ -23,6 +23,13 @@ public:
 	mat4 transform;
 	mat4 projection;
 
+	GLfloat min_x;
+	GLfloat min_y;
+	GLfloat min_z;
+	GLfloat max_z;
+	GLfloat max_x;
+	GLfloat max_y;
+
 	MeshModel(string fileName);
 	~MeshModel(void);
 	void loadFile(string fileName);

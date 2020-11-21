@@ -22,9 +22,12 @@ class Camera {
 public:
 	mat4 cTransform;
 	mat4 projection;
+	vec3 eye;
+	vec3 at;
+	vec3 up;
 
 	Camera();
-	Camera(vec3 v);
+	Camera(vec3 eye, vec3 at, vec3 up);
 	~Camera() {}
 	void setTransformation(const mat4& transform);
 	void LookAt(const vec4& eye, const vec4& at, const vec4& up);
@@ -40,18 +43,23 @@ public:
 
 class Scene {
 
-	vector<Model*> models;
+	
 	vector<Light*> lights;
-	vector<Camera*> cameras;
+	
 	Renderer *m_renderer;
 
 	void _add_line(Model* model, vec3 v1, vec3 v2, vec3 v3);
 
 public:
+	vector<Model*> models;
+	vector<Camera*> cameras;
 	int activeModel;
 	int activeLight;
 	int activeCamera;
-	GLfloat step;
+	GLfloat step_move;
+	GLfloat step_scale;
+	GLfloat step_rotate;
+
 	
 	Scene();
 	Scene(Renderer* renderer);
@@ -62,8 +70,10 @@ public:
 	
 	void showNormalsV();
 	void showNormalsF();
+	void removeNormalsV();
+	void removeNormalsF();
 	void addPrim();
-	void addCam(string s, vec3 v);
+	void addCam(string s, vec3 eye, vec3 at, vec3 up);
 	void render();
 	void rotate(char cord);
 	void zoomIn();
