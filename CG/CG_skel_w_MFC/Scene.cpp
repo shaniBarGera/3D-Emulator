@@ -69,6 +69,13 @@ void Scene::drawDemo()
 	m_renderer->SwapBuffers();
 }
 
+void Scene::_add_line(Model* m, vec3 v1, vec3 v2, vec3 v3) {
+	MeshModel* model = (MeshModel*)m;
+	model->vertex_positions.push_back(v1);
+	model->vertex_positions.push_back(v2);
+	model->vertex_positions.push_back(v3);
+}
+
 //-------------------------------------NORMALS--------------------------------------------//
 
 void Scene::showNormalsV() {
@@ -76,7 +83,21 @@ void Scene::showNormalsV() {
 }
 
 void Scene::showNormalsF() {
-	m_renderer->show_normalsF = true;
+	MeshModel* model = (MeshModel*)models[activeModel];
+	vector<vec3> vertices = model->vertex_positions;
+	int j;
+	for (int i = 0; i < vertices.size() - 1; i += 3)
+	{
+		vec3 v1 = (vertices)[i];
+		vec3 v2 = (vertices)[i + 1];
+		vec3 v3 = (vertices)[i + 2];
+
+		vec3 center = (v1 + v2 + v3) / 3;
+		vec3 normal = normalize(cross(v2 - v1, v3 - v1));
+		model->f_normal.push_back(center);
+		model->f_normal.push_back(center + normal);
+	}
+		
 }
 
 void Scene::removeNormalsV() {
@@ -89,12 +110,6 @@ void Scene::removeNormalsF() {
 
 //-------------------------------------BBOX--------------------------------------------//
 
-void Scene::_add_line(Model* m, vec3 v1, vec3 v2, vec3 v3) {
-	MeshModel* model = (MeshModel*)m;
-	model->vertex_positions.push_back(v1);
-	model->vertex_positions.push_back(v2);
-	model->vertex_positions.push_back(v3);
-}
 
 void Scene::unbbox() {
 	printf("RESIZE\n");

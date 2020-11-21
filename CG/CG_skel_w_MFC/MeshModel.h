@@ -36,6 +36,9 @@ public:
 	void draw();
 	vector<vec3> vertex_positions;
 	vector<vec3> vertex_normal;
+
+	vector<vec3> v_normal;
+	vector<vec3> f_normal;
 	
 };
 

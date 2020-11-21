@@ -6,54 +6,6 @@
 
 #define INDEX(width,x,y,c) (x+y*width)*3+c
 
-GLfloat get_max_of_x(const vector<vec3>* vertices) {
-	GLfloat max = 0;
-	for (size_t i = 0; i < vertices->size() - 1; i++) {
-		if ((*vertices)[i].x >= max) max = (*vertices)[i].x;
-	}
-	return max;
-}
-
-GLfloat get_max_of_y(const vector<vec3>* vertices) {
-	GLfloat max = 0;
-	for (int i = 0; i < vertices->size() - 1; i++) {
-		if ((*vertices)[i].y >= max) max = (*vertices)[i].y;
-	}
-	return max;
-}
-GLfloat get_max_of_z(const vector<vec3>* vertices) {
-	GLfloat max = 0;
-	for (int i = 0; i < vertices->size() - 1; i++) {
-		if ((*vertices)[i].z >= max) max = (*vertices)[i].z;
-	}
-	return max;
-}
-
-GLfloat get_min_of_z(const vector<vec3>* vertices) {
-	GLfloat min = 10000;
-	for (int i = 0; i < vertices->size() - 1; i++) {
-		if ((*vertices)[i].z <= min) min = (*vertices)[i].z;
-	}
-
-	return min;
-}
-GLfloat get_min_of_x(const vector<vec3>* vertices) {
-	GLfloat min = 10000;
-	for (int i = 0; i < vertices->size() - 1; i++) {
-		if ((*vertices)[i].x <= min) min = (*vertices)[i].x;
-	}
-
-	return min;
-}
-
-GLfloat get_min_of_y(const vector<vec3>* vertices) {
-	GLfloat min = 10000;
-	for (int i = 0; i < vertices->size() - 1; i++) {
-		if ((*vertices)[i].y <= min) min = (*vertices)[i].y;
-	}
-	return min;
-}
-
 int normal(GLfloat input, GLfloat output_start, GLfloat output_end, GLfloat input_start, GLfloat input_end) {
 	return int(output_start + ((output_end - output_start) * (input - input_start)) / (input_end - input_start));
 }
@@ -170,41 +122,43 @@ void Renderer::Drawline(int x1, int x2, int y1, int y2) {
 
 void Renderer::DrawTriangles(const vector<vec3>* vertices, const vector<vec3>* normals) {
 	printf("DRAW TRIANGLE\n");
-	GLfloat min_x = get_min_of_x(vertices);
-	GLfloat min_y = get_min_of_y(vertices);
-	//GLfloat min_z = 0.0; // get_min_of_z(vertices);
-	GLfloat max_x = get_max_of_x(vertices);
-	GLfloat max_y = get_max_of_y(vertices);
-	//GLfloat max_z = 0.0; //get_max_of_z(vertices);
 
-	WTransform[0][0] = (m_width - 1) / (max_x - min_x);
-	WTransform[1][1] = (m_height - 1) / (max_y - min_y);
-
-	
-
+	print(CTransform);
 	for (int i = 0; i < vertices->size()-1; i+=3)
 	{
 		
 		GLfloat x[3] = { 0 };
 		GLfloat y[3] = { 0 };
-		GLfloat z[3] = { 0 };
+
 		for (int j = 0; j < 3; j++) {
 			vec4 temp = WTransform * MTransform * vec4((*vertices)[i + j]);
 
 			// camera transform
-			// mat4 c = transpose(CTransform);
-			
 			mat4 c = CTransform;
 			temp = Projection * c * temp;
 		
 			// final result
 			x[j] = temp.x/temp.w;
 			y[j] = temp.y/temp.w;
+
+			
 		}
 
 		Drawline(x[0], x[1], y[0], y[1]);
 		Drawline(x[2], x[1], y[2], y[1]);
 		Drawline(x[0], x[2], y[0], y[2]);
+
+	}
+	for (int i = 0; i < normals->size() - 1; i += 2) {
+		vec3 p1 = (*normals)[i];
+		vec3 p2 = (*normals)[i + 1];
+		vec4 final_p1 = Projection * CTransform * WTransform * MTransform * vec4(p1);
+		vec4 final_p2 = Projection * CTransform * WTransform * MTransform * vec4(p1);
+		GLfloat x1 = final_p1.x / final_p1.w;
+		GLfloat x2 = final_p2.x / final_p1.w;
+		GLfloat y1 = final_p1.y / final_p1.w;
+		GLfloat y2 = final_p2.y / final_p1.w;
+		Drawline(x1, final_p2.x, final_p1.y, final_p2.y);
 	}
 }
 
@@ -322,12 +276,19 @@ void Renderer::SetCameraTransform(const mat4& cTransform) {
 	
 }
 void Renderer::SetProjection(const mat4& projection) {
+	printf("SET PROJECTION\n");
 	Projection = projection;
+	Projection[0][3] += m_width / 2;
+	Projection[1][3] += m_height / 2;
 }
-void Renderer::SetObjectMatrices(const mat4& mTransform, const mat4& wTransform, const mat3& nTransform) {
+void Renderer::SetObjectMatrices(GLfloat min_x, GLfloat min_y, GLfloat max_x, GLfloat max_y,
+							const mat4& mTransform, const mat4& wTransform, const mat3& nTransform) {
 	MTransform = mTransform;
 	NTransform = nTransform;
 	WTransform = wTransform;
+
+	WTransform[0][0] = (m_width - 1) / (max_x - min_x);
+	WTransform[1][1] = (m_height - 1) / (max_y - min_y);
 }
 
 void Renderer::Init() {

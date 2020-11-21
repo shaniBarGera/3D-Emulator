@@ -175,7 +175,7 @@ void MeshModel::loadFile(string fileName)
 		for (int i = 0; i < 3; i++)
 		{
 			vertex_positions.push_back(vertices[it->v[i]-1]); //CHANGE
-			vertex_normal.push_back(vertices[it->vn[i] - 1]);
+			//vertex_normal.push_back(vertices[it->vn[i] - 1]);
 		}
 	}
 
