@@ -13,11 +13,9 @@ Scene::Scene() {
 	Camera* cam = new Camera();
 	cameras.push_back(cam);
 	activeModel = -1;
-	step_move = 1;
+	step_move = 0.005;
 	step_rotate = 10;
 	step_scale = 0.1;
-	printf("EMPTY SCENE\n");
-
 }
 
 Scene::Scene(Renderer* renderer) {
@@ -26,7 +24,7 @@ Scene::Scene(Renderer* renderer) {
 	Camera* cam = new Camera();
 	cameras.push_back(cam);
 	activeModel = -1;
-	step_move = 1;
+	step_move = 0.005;
 	step_rotate = 10;
 	step_scale = 0.1;
 }
@@ -172,10 +170,8 @@ void Scene::rotate(char cord) {
 		temp = RotateZ(-curr_step);
 		break;
 	}
-	print(model->m_transform);
 	model->m_transform = temp * model->m_transform;
 	model->_normal_transform = temp * model->_normal_transform;
-	print(model->m_transform);
 }
 
 void Scene::scale(char dir) {
@@ -203,6 +199,7 @@ void Scene::scale(char dir) {
 		temp_normal[1][1] = 1 / temp[1][1];
 		break;
 	case 'z':
+		printf("z\n");
 		temp[2][2] += curr_step;
 		temp_normal[2][2] = 1 / temp[2][2];
 		break;
@@ -210,28 +207,57 @@ void Scene::scale(char dir) {
 		temp[2][2] -= curr_step;
 		temp_normal[2][2] = 1 / temp[2][2];
 		break;
-	}
+	case '-':
+		temp[0][0] -= curr_step;
+		temp[1][1] -= curr_step;
+		temp[2][2] -= curr_step;
+		temp_normal[0][0] = 1 / temp[0][0];
+		temp_normal[1][1] = 1 / temp[1][1];
+		temp_normal[2][2] = 1 / temp[2][2];
+		break;
+	case '+':
+		temp[0][0] += curr_step;
+		temp[1][1] += curr_step;
+		temp[2][2] += curr_step;
+		temp_normal[0][0] = 1 / temp[0][0];
+		temp_normal[1][1] = 1 / temp[1][1];
+		temp_normal[2][2] = 1 / temp[2][2];
+		break;
+}
 	model->m_transform = temp * model->m_transform;
 	model->_normal_transform = temp_normal * model->_normal_transform;
 
 }
 
 void Scene::zoomIn() {
-	//focus();
+	printf("zoomIn\n");
+	focus();
 	Camera* cam = (Camera*)cameras[activeCamera];
-	mat4 temp = Scale(vec3(1 + step_scale, 1 + step_scale, 1 + step_scale));
+	mat4 temp;
+	temp[0][0] += step_scale;
+	temp[1][1] += step_scale;
+	temp[2][2] += step_scale;
+	print(cam->cTransform);
 	cam->cTransform = temp * cam->cTransform;
+	print(cam->cTransform);
 }
 
 void Scene::zoomOut() {
-	//focus();
+	printf("zoomOut\n");
+	focus();
 	Camera* cam = (Camera*)cameras[activeCamera];
-	mat4 temp = Scale(vec3(1 - step_scale, 1 - step_scale, 1 - step_scale));
+	mat4 temp;
+	temp[0][0] -= step_scale;
+	temp[1][1] -= step_scale;
+	temp[2][2] -= step_scale;
+	print(cam->cTransform);
 	cam->cTransform = temp * cam->cTransform;
+	print(cam->cTransform);
 }
 
 void Scene::move(int dx, int dy) {
-	printf("MOVE\n");
+	printf("MOVE %d %d\n", dx, dy);
+
 	MeshModel* model = (MeshModel*)models[activeModel];
 	model->_world_transform[0][3] += step_move * dx;
 	model->_world_transform[1][3] -= step_move * dy;
@@ -262,7 +288,7 @@ void Scene::focus() {
 	MeshModel* model = (MeshModel*)models[activeModel];
 	Camera* cam = (Camera*)cameras[activeCamera];
 	mat4 temp = model->_world_transform;
-	cam->at = vec3(temp[0][3], temp[1][3],temp[2][3]);
+	cam->at = vec3(temp[0][3]/ temp[3][3], temp[1][3] / temp[3][3],temp[2][3] / temp[3][3]);
 	print(cam->at);
 	cam->LookAt(cam->eye, cam->at, cam->up);
 }
@@ -285,22 +311,11 @@ void Camera::LookAt(const vec4& eye, const vec4& at, const vec4& up)
 	print(up);*/
 
 	vec4 n = normalize(eye - at); // 0 0 1 0
-	printf("n:");
-	print(n);
 	vec4 u = normalize(cross(up, n)); // 1 0 0  
-	printf("u:");
-	print(u);
 	vec4 v = normalize(cross(n, u)); // 0 -1 0
-	printf("v:");
-	print(v);
 	vec4 t = vec4(0.0, 0.0, 0.0, 1.0);
-	printf("t:");
-	print(t);
 	mat4 c = mat4(u, v, n, t);
-	printf("c:\n");
-	print(c);
 	cTransform =  c * Translate(-eye);
-	print(cTransform);
 }
 
 Camera::Camera()
@@ -321,19 +336,19 @@ Camera::Camera(vec3 eye, vec3 at, vec3 up)
 	this->at = at;
 	this->up = up;
 
-	printf("eye: ");
+	/*printf("eye: ");
 	print(eye);
 	printf("at: ");
 	print(at);
 	printf("up: ");
-	print(up);
+	print(up);*/
 
 	LookAt(eye, at, up);
 	//projection = Ortho();
 }
 
 void Camera::setTransformation(const mat4& transform) {
-	cTransform *= transform;
+	//cTransform *= transform;
 }
 
 void Camera::Ortho(const float left, const float right, const float bottom, const float top, const float zNear, const float zFar) {

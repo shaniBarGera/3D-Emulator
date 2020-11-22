@@ -85,6 +85,7 @@ int Sign(int dxy)
 }
 
 void Renderer::Drawline(int x1, int x2, int y1, int y2, char color) {
+	//printf("draw line %d %d %d %d\n", x1, x2, y1, y2);
 	int Dx = x2 - x1;
 	int Dy = y2 - y1;
 
@@ -147,6 +148,8 @@ void Renderer::DrawTriangles(const vector<vec3>* vertices, const vector<vec3>* n
 	print(CTransform);
 	printf("Projection:\n");
 	print(Projection);
+	printf("Screen:\n");
+	print(STransform);
 
 
 	for (int i = 0; i < vertices->size()-1; i+=3)
@@ -160,7 +163,6 @@ void Renderer::DrawTriangles(const vector<vec3>* vertices, const vector<vec3>* n
 		for (int j = 0; j < 3; j++) {
 			center += vec4((*vertices)[i + j]);
 			vec4 temp =  WTransform * MTransform * vec4((*vertices)[i + j]);
-			
 
 			vec4 normal = NTransform * vec4((*normals)[i + j]) * 0.5;
 			normal.w = 0;
@@ -170,16 +172,13 @@ void Renderer::DrawTriangles(const vector<vec3>* vertices, const vector<vec3>* n
 			}
 
 			normal += temp;
-
 			temp = STransform * Projection * CTransform * temp;
 			normal = STransform * Projection * CTransform * normal;
-
 			vec3 n = vec4t3(normal);
 
 			vec3 v = vec4t3(temp);
 			x[j] = v.x;
 			y[j] = v.y;
-
 
 			if (show_normalsV) {
 				Drawline(x[j], n.x, y[j], n.y, 'g');
@@ -190,11 +189,10 @@ void Renderer::DrawTriangles(const vector<vec3>* vertices, const vector<vec3>* n
 		if (bbox && vertices->size() - i <= 36 && vertices->size() - i >= 0)
 			color = 'r'; 
 		
-		
 		Drawline(x[0], x[1], y[0], y[1], color);
 		Drawline(x[2], x[1], y[2], y[1], color);
 		Drawline(x[0], x[2], y[0], y[2], color);
-		
+		//printf("reached 2\n");
 		vec4 v1 = (*vertices)[i];
 		vec4 v2 = (*vertices)[i + 1];
 		vec4 v3 = (*vertices)[i + 2];
@@ -202,10 +200,8 @@ void Renderer::DrawTriangles(const vector<vec3>* vertices, const vector<vec3>* n
 		vec4 temp_center = WTransform * MTransform * center;
 		f_normal += temp_center;
 
-
 		temp_center = STransform * Projection * CTransform * temp_center;
 		f_normal = STransform * Projection * CTransform * f_normal;
-
 		vec3 n = vec4t3(f_normal);
 		vec3 c = vec4t3(temp_center);
 
@@ -229,16 +225,10 @@ void Renderer::ClearColorBuffer() {
 }
 
 void Renderer::reshape(int width, int height) {
-	m_width = width;
-	m_height = height;
-	CreateLocalBuffer();
-	//SwapBuffers();
+	CreateBuffers(width, height);
 }
 
 void Renderer::CreateLocalBuffer() {
-	delete[] m_outBuffer;
-	CreateOpenGLBuffer(); //Do not remove this line.
-	m_outBuffer = new float[3 * m_width * m_height];
 }
 
 /////////////////////////////////////////////////////

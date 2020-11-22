@@ -29,6 +29,9 @@
 #define CAM_ADD 1
 #define CAM_REND 2
 #define CAM_ACTIVE 3
+#define CAM_ZOOMIN 4
+#define CAM_ZOOMOUT 5
+#define CAM_FOCUS 6
 
 #define FILE_OPEN 1
 
@@ -91,9 +94,8 @@ void display(void)
 void reshape(int width, int height)
 {
 	//update the renderer's buffers
-	printf("RESHAPE\n");
-
 	renderer->reshape(width, height);
+	//glFlush();
 }
 
 void keyboard(unsigned char key, int x, int y)
@@ -105,16 +107,13 @@ void keyboard(unsigned char key, int x, int y)
 		exit(EXIT_SUCCESS);
 		break;
 	
-	case '*':
-		scene->focus();
-		break;
 	case '+':
 		printf("PLUS\n");
-		scene->zoomIn();
+		scene->scale(key);
 		break;
 	case '-':
 		printf("MINUS\n");
-		scene->zoomOut();
+		scene->scale(key);
 		break;
 	
 	case 'x':
@@ -238,6 +237,7 @@ void mainMenu(int id)
 void camMenu(int id) {
 	vec3 eye, at, up;
 	string cmd = "";
+	int curr_cam;
 	switch (id)
 	{
 	case CAM_ADD:
@@ -250,12 +250,21 @@ void camMenu(int id) {
 		scene->render();
 		break;
 	case CAM_ACTIVE:
-		int curr_cam = stoi(dialogBox());
+		curr_cam = stoi(dialogBox());
 		while (curr_cam < 0 || curr_cam >= scene->cameras.size()) {
 			AfxMessageBox(_T("Out of range"));
 			curr_cam = stoi(dialogBox());
 		}
 		scene->activeCamera = curr_cam;
+		break;
+	case CAM_FOCUS:
+		scene->focus();
+		break;
+	case CAM_ZOOMIN:
+		scene->zoomIn();
+		break;
+	case CAM_ZOOMOUT:
+		scene->zoomOut();
 		break;
 	}
 }
@@ -317,6 +326,9 @@ void initMenu()
 	glutAddMenuEntry("Add", CAM_ADD);
 	glutAddMenuEntry("Set Active", CAM_ACTIVE);
 	glutAddMenuEntry("Render", CAM_REND);
+	glutAddMenuEntry("Zoom In", CAM_ZOOMIN);
+	glutAddMenuEntry("Zoom Out", CAM_ZOOMOUT);
+	glutAddMenuEntry("Focus", CAM_FOCUS);
 
 	int modelFile = glutCreateMenu(modelMenu);
 	glutAddMenuEntry("Set Active", MODEL_ACTIVE);
