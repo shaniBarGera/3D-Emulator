@@ -70,6 +70,10 @@ void Renderer::setPixelOn(int x, int y, char color) {
 		m_outBuffer[INDEX(m_width - 1, x, y, 0)] = 1;
 		m_outBuffer[INDEX(m_width - 1, x, y, 2)] = 1;
 		break;
+	case 't':
+		m_outBuffer[INDEX(m_width - 1, x, y, 1)] = 1;
+		m_outBuffer[INDEX(m_width - 1, x, y, 2)] = 1;
+		break;
 	}
 }
 
@@ -135,69 +139,82 @@ void Renderer::Drawline(int x1, int x2, int y1, int y2, char color) {
 void Renderer::DrawTriangles(const vector<vec3>* vertices, const vector<vec3>* normals) {
 	printf("DRAW TRIANGLE\n");
 
-	vector<vec3> v;
-	v.insert(end(v), begin(*vertices), end(*vertices));
-	//v.insert(end(v), begin(*normals), end(*normals));
+	printf("MTransfrom:\n");
+	print(MTransform);
+	printf("WTransfrom:\n");
+	print(WTransform);
+	printf("CTransfrom:\n");
+	print(CTransform);
+	printf("Projection:\n");
+	print(Projection);
 
-	for (int i = 0; i < v.size()-1; i+=3)
+
+	for (int i = 0; i < vertices->size()-1; i+=3)
 	{
 		
 		GLfloat x[3] = { 0 };
 		GLfloat y[3] = { 0 };
+		vec4 center(0);
 
+		vec4 f_normal;
 		for (int j = 0; j < 3; j++) {
-			vec4 temp = WTransform * MTransform * vec4(v[i + j]);
+			center += vec4((*vertices)[i + j]);
+			vec4 temp =  WTransform * MTransform * vec4((*vertices)[i + j]);
+			
 
-			// camera transform
-			mat4 c = CTransform;
-			temp = Projection * c * temp;
-		
-			// final result
-			x[j] = temp.x/temp.w;
-			y[j] = temp.y/temp.w;
+			vec4 normal = NTransform * vec4((*normals)[i + j]) * 0.5;
+			normal.w = 0;
+			
+			if (j == 0) {
+				f_normal = normal;
+			}
+
+			normal += temp;
+
+			temp = STransform * Projection * CTransform * temp;
+			normal = STransform * Projection * CTransform * normal;
+
+			vec3 n = vec4t3(normal);
+
+			vec3 v = vec4t3(temp);
+			x[j] = v.x;
+			y[j] = v.y;
+
+
+			if (show_normalsV) {
+				Drawline(x[j], n.x, y[j], n.y, 'g');
+			}
 		}
 
 		char color = 'p';
 		if (bbox && vertices->size() - i <= 36 && vertices->size() - i >= 0)
 			color = 'r'; 
 		
-		/*int diff = vertices->size() - i;
-		if (diff <= 0) {
-			color = 'g';
-		}*/
-		
 		
 		Drawline(x[0], x[1], y[0], y[1], color);
 		Drawline(x[2], x[1], y[2], y[1], color);
 		Drawline(x[0], x[2], y[0], y[2], color);
+		
+		vec4 v1 = (*vertices)[i];
+		vec4 v2 = (*vertices)[i + 1];
+		vec4 v3 = (*vertices)[i + 2];
+		center = (v1 +v2 +v3) / 3;
+		vec4 temp_center = WTransform * MTransform * center;
+		f_normal += temp_center;
 
-	}
 
-	if (!show_normalsF) return;
+		temp_center = STransform * Projection * CTransform * temp_center;
+		f_normal = STransform * Projection * CTransform * f_normal;
 
-	for (int i = 0; i < normals->size() - 1; i += 2)
-	{
+		vec3 n = vec4t3(f_normal);
+		vec3 c = vec4t3(temp_center);
 
-		GLfloat x[2] = { 0 };
-		GLfloat y[2] = { 0 };
-
-		for (int j = 0; j < 2; j++) {
-			vec4 temp = WTransform * MTransform * vec4((*normals)[i + j]);
-
-			// camera transform
-			mat4 c = CTransform;
-			temp = Projection * c * temp;
-
-			// final result
-			x[j] = temp.x / temp.w;
-			y[j] = temp.y / temp.w;
+		if (show_normalsF) {
+			Drawline(c.x, n.x, c.y, n.y, 't');
 		}
-
-		char color = 'g';
-		//setPixelOn(x[0], y[0], color);
-		//setPixelOn(x[1], y[1], color);
-		Drawline(x[0], x[1], y[0], y[1], color);
+		
 	}
+
 }
 
 void Renderer::ClearColorBuffer() {
@@ -309,24 +326,20 @@ void Renderer::ClearDepthBuffer() {
 		}
 }
 
-void Renderer::SetCameraTransform(const mat4& cTransform) {
+void Renderer::SetCameraMatrices(const mat4& cTransform, const mat4& projection) {
 	CTransform = cTransform;
-	
-}
-void Renderer::SetProjection(const mat4& projection) {
-	printf("SET PROJECTION\n");
 	Projection = projection;
-	Projection[0][3] += m_width / 2;
-	Projection[1][3] += m_height / 2;
 }
-void Renderer::SetObjectMatrices(GLfloat min_x, GLfloat min_y, GLfloat max_x, GLfloat max_y,
-							const mat4& mTransform, const mat4& wTransform, const mat3& nTransform) {
+void Renderer::SetScreenTransform(GLfloat min_x, GLfloat min_y, GLfloat max_x, GLfloat max_y) {
+	STransform[0][3] = m_width / 2;
+	STransform[1][3] = m_height / 2;
+	STransform[0][0] = m_width / 2;
+	STransform[1][1] = m_height / 2;
+}
+void Renderer::SetObjectMatrices(const mat4& mTransform, const mat4& wTransform, const mat4& nTransform) {
 	MTransform = mTransform;
 	NTransform = nTransform;
 	WTransform = wTransform;
-
-	WTransform[0][0] = (m_width - 1) / (max_x - min_x);
-	WTransform[1][1] = (m_height - 1) / (max_y - min_y);
 }
 
 void Renderer::SetFlags(bool bbox, bool show_normalsV, bool show_normalsF) {

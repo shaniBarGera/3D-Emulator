@@ -19,7 +19,8 @@ public:
 	bool show_normalsF = false;
 
 	mat4 _world_transform;
-	mat3 _normal_transform;
+	mat4 _normal_transform;
+	
 	mat4 m_transform;
 	mat4 m_translate;
 	mat4 transform;
@@ -38,6 +39,7 @@ public:
 	void draw();
 	vector<vec3> vertex_positions;
 	vector<vec3> vertex_normal;
+	vector<vec3> vertices;
 
 	vector<vec3> v_normal;
 	vector<vec3> f_normal;

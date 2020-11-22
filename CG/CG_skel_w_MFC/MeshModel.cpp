@@ -123,7 +123,7 @@ void MeshModel::loadFile(string fileName)
 {
 	ifstream ifile(fileName.c_str());
 	vector<FaceIdcs> faces;
-	vector<vec3> vertices;
+	vector<vec3> normals;
 	// while not end of file
 	while (!ifile.eof())
 	{
@@ -146,7 +146,7 @@ void MeshModel::loadFile(string fileName)
 		}
 		else if (lineType == "vn") {
 			// vertex normal
-			vertex_normal.push_back(vec3fFromStream(issLine));
+			normals.push_back(vec3fFromStream(issLine));
 			
 		}
 		else if (lineType == "#" || lineType == "")
@@ -175,9 +175,8 @@ void MeshModel::loadFile(string fileName)
 		for (int i = 0; i < 3; i++)
 		{
 			vertex_positions.push_back(vertices[it->v[i]-1]); //CHANGE
-			/*if (it->vn[i]) {
-				vertex_normal.push_back(vertices[it->vn[i] - 1]);
-			}*/
+			vertex_normal.push_back(normals[it->vn[i] - 1]);
+
 			
 		}
 	}
@@ -196,17 +195,19 @@ void MeshModel::loadFile(string fileName)
 	vec4 d = vec4(0, 0, 0, 1);
 	m_transform = mat4(a,b,c,d);
 
-	for (int i = 0; i < vertex_positions.size() - 1; i += 3)
+	/*for (int i = 0; i < vertex_positions.size() - 1; i += 3)
 	{
 		vec3 v1 = vertex_positions[i];
 		vec3 v2 = vertex_positions[i + 1];
 		vec3 v3 = vertex_positions[i + 2];
 
 		vec3 center = (v1 + v2 + v3) / 3;
-		f_normal.push_back(center);
-		vec3 normal = normalize(cross(v2 - v1, v3 - v1)) * 0.4;
-		f_normal.push_back(center + normal);
-	}
+		vertex_normal.push_back(center);
+		vec3 normal = normalize(cross(v2 - v1, v3 - v1));
+		vertex_normal.push_back(normal);
+		//int f = i % 3;
+		//faces[f]->v[0]
+	}*/
 }
 
 

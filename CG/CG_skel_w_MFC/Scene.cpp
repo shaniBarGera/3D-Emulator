@@ -51,12 +51,11 @@ void Scene::draw()
 	Camera* cam = cameras[activeCamera];
 	for (size_t i = 0; i < models.size(); ++i) {
 		 MeshModel* model = (MeshModel*)models[i];
-		 m_renderer->SetProjection(cam->projection);
-		 m_renderer->SetCameraTransform(cam->cTransform);
-		 m_renderer->SetObjectMatrices(model->min_x, model->min_y, model->max_x, model->max_y,
-				model->m_transform, model->_world_transform, model->_normal_transform);
+		 m_renderer->SetScreenTransform(model->min_x, model->min_y, model->max_x, model->max_y);
+		 m_renderer->SetCameraMatrices(cam->cTransform, cam->projection);
+		 m_renderer->SetObjectMatrices(model->m_transform, model->_world_transform, model->_normal_transform);
 		 m_renderer->SetFlags(model->bbox, model->show_normalsV, model->show_normalsF);
-		 m_renderer->DrawTriangles(&model->vertex_positions, &model->f_normal);
+		 m_renderer->DrawTriangles(&model->vertex_positions, &model->vertex_normal);
 	}
 	if (models.size() > 0) {
 		m_renderer->SwapBuffers();
@@ -91,7 +90,7 @@ void Scene::showNormalsF() {
 
 void Scene::removeNormalsV() {
 	MeshModel* model = (MeshModel*)models[activeModel];
-	model->show_normalsF = false;
+	model->show_normalsV = false;
 }
 
 void Scene::removeNormalsF() {
@@ -175,6 +174,7 @@ void Scene::rotate(char cord) {
 	}
 	print(model->m_transform);
 	model->m_transform = temp * model->m_transform;
+	model->_normal_transform = temp * model->_normal_transform;
 	print(model->m_transform);
 }
 
@@ -182,29 +182,38 @@ void Scene::scale(char dir) {
 	printf("SCALE %c\n", dir);
 	MeshModel* model = (MeshModel*)models[activeModel];
 	mat4 temp;
+	mat4 temp_normal;
 	GLfloat curr_step = step_scale;
 
 	switch (dir) {
 	case 'l':
 		temp[0][0] -= curr_step;
+		temp_normal[0][0] = 1 / temp[0][0];
 		break;
 	case 'r':
 		temp[0][0] += curr_step;
+		temp_normal[0][0] = 1 / temp[0][0];
 		break;
 	case 'u':
 		temp[1][1] += curr_step;
+		temp_normal[1][1] = 1 / temp[1][1];
 		break;
 	case 'd':
 		temp[1][1] -= curr_step;
+		temp_normal[1][1] = 1 / temp[1][1];
 		break;
 	case 'z':
 		temp[2][2] += curr_step;
+		temp_normal[2][2] = 1 / temp[2][2];
 		break;
 	case 'Z':
 		temp[2][2] -= curr_step;
+		temp_normal[2][2] = 1 / temp[2][2];
 		break;
 	}
-	model->m_transform *= temp;
+	model->m_transform = temp * model->m_transform;
+	model->_normal_transform = temp_normal * model->_normal_transform;
+
 }
 
 void Scene::zoomIn() {
@@ -252,8 +261,8 @@ void Scene::focus() {
 	printf("FOCUS\n");
 	MeshModel* model = (MeshModel*)models[activeModel];
 	Camera* cam = (Camera*)cameras[activeCamera];
-	mat4 temp = model->_world_transform * model->m_transform;
-	cam->at = vec3(temp[0][3], temp[1][3],temp[3][3]);
+	mat4 temp = model->_world_transform;
+	cam->at = vec3(temp[0][3], temp[1][3],temp[2][3]);
 	print(cam->at);
 	cam->LookAt(cam->eye, cam->at, cam->up);
 }
@@ -275,19 +284,30 @@ void Camera::LookAt(const vec4& eye, const vec4& at, const vec4& up)
 	printf("up: ");
 	print(up);*/
 
-	vec4 n = normalize(eye - at);
-	vec4 u = normalize(cross(up, n));
-	vec4 v = normalize(cross(n, u));
+	vec4 n = normalize(eye - at); // 0 0 1 0
+	printf("n:");
+	print(n);
+	vec4 u = normalize(cross(up, n)); // 1 0 0  
+	printf("u:");
+	print(u);
+	vec4 v = normalize(cross(n, u)); // 0 -1 0
+	printf("v:");
+	print(v);
 	vec4 t = vec4(0.0, 0.0, 0.0, 1.0);
+	printf("t:");
+	print(t);
 	mat4 c = mat4(u, v, n, t);
+	printf("c:\n");
+	print(c);
 	cTransform =  c * Translate(-eye);
+	print(cTransform);
 }
 
 Camera::Camera()
 {
 	printf("CAMERA CTR\n");
 
-	eye = vec3(0, 1, 3);
+	eye = vec3(0, 0, 3);
 	at = vec3(0, 0, 0);
 	up = vec3(0, 1, 0);
 	LookAt(eye, at, up);
@@ -317,18 +337,23 @@ void Camera::setTransformation(const mat4& transform) {
 }
 
 void Camera::Ortho(const float left, const float right, const float bottom, const float top, const float zNear, const float zFar) {
-	vec4 a = vec4(-(2 / (right - left)), 0.0, 0.0, 1.0);
-	vec4 b = vec4(0.0, 2 / (top - bottom), 0.0, 1.0);
-	vec4 c = vec4(0.0, 0.0, -2 / (zFar - zNear), 1.0);
-	vec4 d = vec4(-(right + left) / (right - left), -(top + bottom) / (top - bottom), -(zFar + zNear) / (zFar - zNear), 1.0);
-	projection = mat4(a, b, c, d);
+	vec4 a = vec4((2 / (right - left)), 0.0, 0.0, -(right + left) / (right - left));
+	vec4 b = vec4(0.0, 2 / (top - bottom), 0.0, -(top + bottom) / (top - bottom));
+	vec4 c = vec4(0.0, 0.0, -2 / (zFar - zNear), -(zFar + zNear) / (zFar - zNear));
+	vec4 d = vec4(0.0, 0.0, 0.0, 1.0);
+	setTransformation(mat4(a, b, c, d));
+	//projection = mat4(a, b, c, d);
 }
 
+void Camera::Perspective(const float fovy, const float aspect, const float zNear, const float zFar) {
+	vec4 a = vec4(1 / (aspect * tan(0.5f * fovy)), 0.0, 0.0, 0.0);
+	vec4 b = vec4(0.0, 1 / tan(0.5f * fovy), 0.0, 0.0);
+	vec4 c = vec4(0.0, 0.0, (-zNear - zFar) / (zNear - zFar), (2 * zNear * zFar) / (zNear - zFar));
+	vec4 d = vec4(0.0, 0.0, 1.0, 0.0);
+	setTransformation(mat4(a, b, c, d));
+	//projection = mat4(a, b, c, d);
+}
 
-//mat4 Camera::Perspective(const float fovy, const float aspect,
-//	const float zNear, const float zFar) {
-
-//}
 
 mat4 Camera::Frustum(const float left, const float right,
 	const float bottom, const float top,

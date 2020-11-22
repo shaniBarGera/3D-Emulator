@@ -98,7 +98,7 @@ void reshape(int width, int height)
 
 void keyboard(unsigned char key, int x, int y)
 {
-	printf("KEYBOARD\n");
+	printf("KEYBOARD %c\n", key);
 	switch (key) {
 	case 033:
 		printf("EXIT\n");

@@ -15,7 +15,8 @@ class Renderer
 	mat4 MTransform;
 	mat4 WTransform;
 	mat4 Projection;
-	mat3 NTransform;
+	mat4 NTransform;
+	mat4 STransform;
 
 	bool bbox;
 	
@@ -42,10 +43,9 @@ public:
 	void Init();
 	void DrawTriangles(const vector<vec3>* vertices, const vector<vec3>* normals = NULL);
 	void Drawline(int x1, int x2, int y1, int y2, char color);
-	void SetCameraTransform(const mat4& cTransform);
-	void SetProjection(const mat4& projection);
-	void SetObjectMatrices(GLfloat min_x, GLfloat min_y, GLfloat max_x, GLfloat max_y, 
-		const mat4& mTransform, const mat4& wTransform, const mat3& nTransform);
+	void SetCameraMatrices(const mat4& cTransform, const mat4& projection);
+	void SetScreenTransform(GLfloat min_x, GLfloat min_y, GLfloat max_x, GLfloat max_y);
+	void SetObjectMatrices(const mat4& mTransform, const mat4& wTransform, const mat4& nTransform);
 	void SwapBuffers();
 	void ClearColorBuffer();
 	void ClearDepthBuffer();
