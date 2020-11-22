@@ -200,11 +200,16 @@ void Scene::scale(char dir) {
 		break;
 	case 'z':
 		printf("z\n");
+		print(temp);
 		temp[2][2] += curr_step;
+		print(temp);
 		temp_normal[2][2] = 1 / temp[2][2];
 		break;
 	case 'Z':
+		printf("Z\n");
+		print(temp);
 		temp[2][2] -= curr_step;
+		print(temp);
 		temp_normal[2][2] = 1 / temp[2][2];
 		break;
 	case '-':
@@ -223,7 +228,7 @@ void Scene::scale(char dir) {
 		temp_normal[1][1] = 1 / temp[1][1];
 		temp_normal[2][2] = 1 / temp[2][2];
 		break;
-}
+	}
 	model->m_transform = temp * model->m_transform;
 	model->_normal_transform = temp_normal * model->_normal_transform;
 
@@ -237,9 +242,8 @@ void Scene::zoomIn() {
 	temp[0][0] += step_scale;
 	temp[1][1] += step_scale;
 	temp[2][2] += step_scale;
-	print(cam->cTransform);
-	cam->cTransform = temp * cam->cTransform;
-	print(cam->cTransform);
+	cam->S *= temp;
+	cam->cTransform *= cam->S;
 }
 
 void Scene::zoomOut() {
@@ -250,9 +254,8 @@ void Scene::zoomOut() {
 	temp[0][0] -= step_scale;
 	temp[1][1] -= step_scale;
 	temp[2][2] -= step_scale;
-	print(cam->cTransform);
-	cam->cTransform = temp * cam->cTransform;
-	print(cam->cTransform);
+	cam->S *= temp;
+	cam->cTransform *= cam->S;
 }
 
 void Scene::move(int dx, int dy) {

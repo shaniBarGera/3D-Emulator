@@ -106,7 +106,7 @@ void keyboard(unsigned char key, int x, int y)
 		printf("EXIT\n");
 		exit(EXIT_SUCCESS);
 		break;
-	
+
 	case '+':
 		printf("PLUS\n");
 		scene->scale(key);
@@ -114,6 +114,16 @@ void keyboard(unsigned char key, int x, int y)
 	case '-':
 		printf("MINUS\n");
 		scene->scale(key);
+		break;
+
+	case 'f':
+		scene->focus();
+		break;
+	case 'i':
+		scene->zoomIn();
+		break;
+	case 'o':
+		scene->zoomOut();
 		break;
 	
 	case 'x':
@@ -139,7 +149,7 @@ void keyboard(unsigned char key, int x, int y)
 }
 
 void catchKey(int key, int x, int y) {
-	printf("CATCH KEY\n");
+	printf("CATCH KEY %d\n", key);
 	switch (key) {
 	case GLUT_KEY_LEFT:
 		scene->scale('l');

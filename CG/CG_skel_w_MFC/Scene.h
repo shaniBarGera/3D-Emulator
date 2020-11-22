@@ -22,6 +22,7 @@ class Camera {
 public:
 	mat4 cTransform;
 	mat4 projection;
+	mat4 S;
 	vec3 eye;
 	vec3 at;
 	vec3 up;
