@@ -44,6 +44,11 @@ void Scene::loadOBJModel(string fileName)
 
 void Scene::draw()
 {
+	vector<vec3> eyes;
+	for (size_t i = 0; i < cameras.size(); ++i) {
+		if (cameras[i]->rendered) 
+			eyes.push_back(cameras[i]->eye);
+	}
 	// 1. Send the renderer the current camera transform and the projection
 	// 2. Tell all models to draw themselves
 	Camera* cam = cameras[activeCamera];
@@ -53,7 +58,7 @@ void Scene::draw()
 		 m_renderer->SetCameraMatrices(cam->cTransform, cam->projection);
 		 m_renderer->SetObjectMatrices(model->m_transform, model->_world_transform, model->_normal_transform);
 		 m_renderer->SetFlags(model->bbox, model->show_normalsV, model->show_normalsF);
-		 m_renderer->DrawTriangles(&model->vertex_positions, &model->vertex_normal);
+		 m_renderer->DrawTriangles(&eyes, &model->vertex_positions, &model->vertex_normal);
 	}
 	if (models.size() > 0) {
 		m_renderer->SwapBuffers();
@@ -284,7 +289,17 @@ void Scene::addCam(string cmd, vec3 eye, vec3 at, vec3 up) {
 
 void Scene::render() {
 	// Allow the user to choose if the cameras should be rendered (as a small plus sign for example)
+	Camera* cam = (Camera*)cameras[activeCamera];
+	cam->rendered = true;
 	
+}
+
+
+void Scene::unrender() {
+	// Allow the user to choose if the cameras should be rendered (as a small plus sign for example)
+	Camera* cam = (Camera*)cameras[activeCamera];
+	cam->rendered = false;
+
 }
 
 void Scene::focus() {

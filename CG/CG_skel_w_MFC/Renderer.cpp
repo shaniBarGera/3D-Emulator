@@ -74,6 +74,11 @@ void Renderer::setPixelOn(int x, int y, char color) {
 		m_outBuffer[INDEX(m_width - 1, x, y, 1)] = 1;
 		m_outBuffer[INDEX(m_width - 1, x, y, 2)] = 1;
 		break;
+	case 'w':
+		m_outBuffer[INDEX(m_width - 1, x, y, 0)] = 1;
+		m_outBuffer[INDEX(m_width - 1, x, y, 1)] = 1;
+		m_outBuffer[INDEX(m_width - 1, x, y, 2)] = 1;
+		break;
 	}
 }
 
@@ -137,24 +142,21 @@ void Renderer::Drawline(int x1, int x2, int y1, int y2, char color) {
 }
 
 
-void Renderer::DrawTriangles(const vector<vec3>* vertices, const vector<vec3>* normals) {
+void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertices, const vector<vec3>* normals) {
 	printf("DRAW TRIANGLE\n");
 
-	printf("MTransfrom:\n");
-	print(MTransform);
-	printf("WTransfrom:\n");
-	print(WTransform);
-	printf("CTransfrom:\n");
-	print(CTransform);
-	printf("Projection:\n");
-	print(Projection);
-	printf("Screen:\n");
-	print(STransform);
+	for (int j = 0; j < eye->size(); j++) {
+		vec4 temp = vec4((*eye)[j]);
+		temp = STransform * Projection * CTransform * temp;
+		GLfloat x = temp.x / temp.w;
+		GLfloat y = temp.y /temp.w;
+		Drawline(x - 3, x + 3, y, y, 'w');
+		Drawline(x, x, y - 3, y + 3, 'w');
+	}
 
 
 	for (int i = 0; i < vertices->size()-1; i+=3)
 	{
-		
 		GLfloat x[3] = { 0 };
 		GLfloat y[3] = { 0 };
 		vec4 center(0);

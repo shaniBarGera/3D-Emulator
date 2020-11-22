@@ -26,6 +26,7 @@ public:
 	vec3 eye;
 	vec3 at;
 	vec3 up;
+	bool rendered = false;
 
 	Camera();
 	Camera(vec3 eye, vec3 at, vec3 up);
@@ -80,6 +81,7 @@ public:
 	void addPrim();
 	void addCam(string s, vec3 eye, vec3 at, vec3 up);
 	void render();
+	void unrender();
 	void rotate(char cord);
 	void zoomIn();
 	void zoomOut();

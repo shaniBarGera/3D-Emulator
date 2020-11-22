@@ -41,7 +41,7 @@ public:
 	Renderer(int width, int height);
 	~Renderer(void);
 	void Init();
-	void DrawTriangles(const vector<vec3>* vertices, const vector<vec3>* normals = NULL);
+	void DrawTriangles(const vector<vec3>* eyes, const vector<vec3>* vertices, const vector<vec3>* normals = NULL);
 	void Drawline(int x1, int x2, int y1, int y2, char color);
 	void SetCameraMatrices(const mat4& cTransform, const mat4& projection);
 	void SetScreenTransform(GLfloat min_x, GLfloat min_y, GLfloat max_x, GLfloat max_y);

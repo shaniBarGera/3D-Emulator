@@ -32,6 +32,7 @@
 #define CAM_ZOOMIN 4
 #define CAM_ZOOMOUT 5
 #define CAM_FOCUS 6
+#define CAM_XREND 7
 
 #define FILE_OPEN 1
 
@@ -263,6 +264,9 @@ void camMenu(int id) {
 	case CAM_REND:
 		scene->render();
 		break;
+	case CAM_XREND:
+		scene->unrender();
+		break;
 	case CAM_ACTIVE:
 		curr_cam = stoi(dialogBox());
 		while (curr_cam < 0 || curr_cam >= scene->cameras.size()) {
@@ -377,10 +381,13 @@ void initMenu()
 	glutAddMenuEntry("Add", CAM_ADD);
 	glutAddMenuEntry("Set Active", CAM_ACTIVE);
 	glutAddMenuEntry("Render", CAM_REND);
+	glutAddMenuEntry("Unrender", CAM_XREND);
 	glutAddMenuEntry("Zoom In", CAM_ZOOMIN);
 	glutAddMenuEntry("Zoom Out", CAM_ZOOMOUT);
 	glutAddMenuEntry("Focus", CAM_FOCUS);
 	glutAddSubMenu("Projection", projFile);
+
+
 
 
 	int modelFile = glutCreateMenu(modelMenu);
