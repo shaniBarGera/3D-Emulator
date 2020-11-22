@@ -154,18 +154,19 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 		Drawline(x, x, y - 3, y + 3, 'w');
 	}
 
-
-	for (int i = 0; i < vertices->size()-1; i+=3)
+	int length = (bbox) ? vertices->size() - 36 : vertices->size();
+	for (int i = 0; i < length; i+=3)
 	{
 		GLfloat x[3] = { 0 };
 		GLfloat y[3] = { 0 };
 		vec4 center(0);
 
 		vec4 f_normal;
+		
 		for (int j = 0; j < 3; j++) {
 			center += vec4((*vertices)[i + j]);
 			vec4 temp =  WTransform * MTransform * vec4((*vertices)[i + j]);
-
+			
 			vec4 normal = NTransform * vec4((*normals)[i + j]) * 0.5;
 			normal.w = 0;
 			
@@ -173,6 +174,7 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 				f_normal = normal;
 			}
 
+			
 			normal += temp;
 			temp = STransform * Projection * CTransform * temp;
 			normal = STransform * Projection * CTransform * normal;
@@ -186,15 +188,13 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 				Drawline(x[j], n.x, y[j], n.y, 'g');
 			}
 		}
-
-		char color = 'p';
-		if (bbox && vertices->size() - i <= 36 && vertices->size() - i >= 0)
-			color = 'r'; 
 		
+		char color = 'p';
+
 		Drawline(x[0], x[1], y[0], y[1], color);
 		Drawline(x[2], x[1], y[2], y[1], color);
 		Drawline(x[0], x[2], y[0], y[2], color);
-		//printf("reached 2\n");
+	
 		vec4 v1 = (*vertices)[i];
 		vec4 v2 = (*vertices)[i + 1];
 		vec4 v3 = (*vertices)[i + 2];
@@ -211,6 +211,27 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 			Drawline(c.x, n.x, c.y, n.y, 't');
 		}
 		
+	}
+
+	for (int i = length; i < vertices->size(); i += 3)
+	{
+		GLfloat x[3] = { 0 };
+		GLfloat y[3] = { 0 };
+
+		for (int j = 0; j < 3; j++) {
+			vec4 temp = WTransform * MTransform * vec4((*vertices)[i + j]);
+			temp = STransform * Projection * CTransform * temp;
+			vec3 v = vec4t3(temp);
+			x[j] = v.x;
+			y[j] = v.y;
+
+		}
+
+		char color = 'r';
+
+		Drawline(x[0], x[1], y[0], y[1], color);
+		Drawline(x[2], x[1], y[2], y[1], color);
+		Drawline(x[0], x[2], y[0], y[2], color);
 	}
 
 }

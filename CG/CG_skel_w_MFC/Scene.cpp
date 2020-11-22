@@ -113,8 +113,6 @@ void Scene::unbbox() {
 }
 
 void Scene::bbox() {
-	printf("BBOX\n");
-
 	MeshModel* model = (MeshModel*)models[activeModel];
 	if (model->bbox) return;
 

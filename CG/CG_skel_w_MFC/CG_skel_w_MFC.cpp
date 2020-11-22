@@ -120,6 +120,10 @@ void keyboard(unsigned char key, int x, int y)
 		scene->scale(key);
 		break;
 
+	case 'b':
+		scene->bbox();
+		break;
+
 	case 'f':
 		scene->focus();
 		break;
