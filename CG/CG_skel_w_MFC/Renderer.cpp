@@ -6,19 +6,17 @@
 
 #define INDEX(width,x,y,c) (x+y*width)*3+c
 
-int normal(GLfloat input, GLfloat output_start, GLfloat output_end, GLfloat input_start, GLfloat input_end) {
-	return int(output_start + ((output_end - output_start) * (input - input_start)) / (input_end - input_start));
-}
-
 Renderer::Renderer() :m_width(512), m_height(512)
 {
 	InitOpenGLRendering();
 	CreateBuffers(512,512);
+	bbox = false;
 }
 Renderer::Renderer(int width, int height) :m_width(width), m_height(height)
 {
 	InitOpenGLRendering();
 	CreateBuffers(width,height);
+	bbox = false;
 }
 
 Renderer::~Renderer(void)
@@ -55,11 +53,24 @@ void Renderer::SetDemoBuffer()
 	}
 }
 
-void Renderer::setPixelOn(int x, int y) {
+void Renderer::setPixelOn(int x, int y, char color) {
 	if (x < 0 || x >= m_width || y < 0 || y >= m_height) return;
-	m_outBuffer[INDEX(m_width - 1, x, y, 0)] = 1;
-	m_outBuffer[INDEX(m_width - 1, x, y, 1)] = 0;
-	m_outBuffer[INDEX(m_width - 1, x, y, 2)] = 0;
+	
+	switch (color) {
+	case 'r' :
+		m_outBuffer[INDEX(m_width - 1, x, y, 0)] = 1;
+		break;
+	case 'g':
+		m_outBuffer[INDEX(m_width - 1, x, y, 1)] = 1;
+		break;
+	case 'b':
+		m_outBuffer[INDEX(m_width - 1, x, y, 2)] = 1;
+		break;
+	case 'p':
+		m_outBuffer[INDEX(m_width - 1, x, y, 0)] = 1;
+		m_outBuffer[INDEX(m_width - 1, x, y, 2)] = 1;
+		break;
+	}
 }
 
 int Sign(int dxy)
@@ -69,7 +80,7 @@ int Sign(int dxy)
 	else return 0;
 }
 
-void Renderer::Drawline(int x1, int x2, int y1, int y2) {
+void Renderer::Drawline(int x1, int x2, int y1, int y2, char color) {
 	int Dx = x2 - x1;
 	int Dy = y2 - y1;
 
@@ -92,7 +103,7 @@ void Renderer::Drawline(int x1, int x2, int y1, int y2) {
 		//# Main loop
 		for (int I = 0; I < D; I++)
 		{
-			setPixelOn(X, Y);
+			setPixelOn(X, Y, color);
 			//# Update (X, Y) and R
 			X += Sx; R += Dy; //# Lateral move
 			if (R >= Dx)
@@ -107,7 +118,7 @@ void Renderer::Drawline(int x1, int x2, int y1, int y2) {
 		//# Main loop
 		for (int I = 0; I < D; I++)
 		{
-			setPixelOn(X, Y);
+			setPixelOn(X, Y, color);
 			//# Update (X, Y) and R
 			Y += Sy;
 			R += Dx; //# Lateral move
@@ -120,18 +131,22 @@ void Renderer::Drawline(int x1, int x2, int y1, int y2) {
 	}
 }
 
+
 void Renderer::DrawTriangles(const vector<vec3>* vertices, const vector<vec3>* normals) {
 	printf("DRAW TRIANGLE\n");
 
-	print(CTransform);
-	for (int i = 0; i < vertices->size()-1; i+=3)
+	vector<vec3> v;
+	v.insert(end(v), begin(*vertices), end(*vertices));
+	//v.insert(end(v), begin(*normals), end(*normals));
+
+	for (int i = 0; i < v.size()-1; i+=3)
 	{
 		
 		GLfloat x[3] = { 0 };
 		GLfloat y[3] = { 0 };
 
 		for (int j = 0; j < 3; j++) {
-			vec4 temp = WTransform * MTransform * vec4((*vertices)[i + j]);
+			vec4 temp = WTransform * MTransform * vec4(v[i + j]);
 
 			// camera transform
 			mat4 c = CTransform;
@@ -140,25 +155,48 @@ void Renderer::DrawTriangles(const vector<vec3>* vertices, const vector<vec3>* n
 			// final result
 			x[j] = temp.x/temp.w;
 			y[j] = temp.y/temp.w;
-
-			
 		}
 
-		Drawline(x[0], x[1], y[0], y[1]);
-		Drawline(x[2], x[1], y[2], y[1]);
-		Drawline(x[0], x[2], y[0], y[2]);
+		char color = 'p';
+		if (bbox && vertices->size() - i <= 36 && vertices->size() - i >= 0)
+			color = 'r'; 
+		
+		/*int diff = vertices->size() - i;
+		if (diff <= 0) {
+			color = 'g';
+		}*/
+		
+		
+		Drawline(x[0], x[1], y[0], y[1], color);
+		Drawline(x[2], x[1], y[2], y[1], color);
+		Drawline(x[0], x[2], y[0], y[2], color);
 
 	}
-	for (int i = 0; i < normals->size() - 1; i += 2) {
-		vec3 p1 = (*normals)[i];
-		vec3 p2 = (*normals)[i + 1];
-		vec4 final_p1 = Projection * CTransform * WTransform * MTransform * vec4(p1);
-		vec4 final_p2 = Projection * CTransform * WTransform * MTransform * vec4(p1);
-		GLfloat x1 = final_p1.x / final_p1.w;
-		GLfloat x2 = final_p2.x / final_p1.w;
-		GLfloat y1 = final_p1.y / final_p1.w;
-		GLfloat y2 = final_p2.y / final_p1.w;
-		Drawline(x1, final_p2.x, final_p1.y, final_p2.y);
+
+	if (!show_normalsF) return;
+
+	for (int i = 0; i < normals->size() - 1; i += 2)
+	{
+
+		GLfloat x[2] = { 0 };
+		GLfloat y[2] = { 0 };
+
+		for (int j = 0; j < 2; j++) {
+			vec4 temp = WTransform * MTransform * vec4((*normals)[i + j]);
+
+			// camera transform
+			mat4 c = CTransform;
+			temp = Projection * c * temp;
+
+			// final result
+			x[j] = temp.x / temp.w;
+			y[j] = temp.y / temp.w;
+		}
+
+		char color = 'g';
+		//setPixelOn(x[0], y[0], color);
+		//setPixelOn(x[1], y[1], color);
+		Drawline(x[0], x[1], y[0], y[1], color);
 	}
 }
 
@@ -289,6 +327,12 @@ void Renderer::SetObjectMatrices(GLfloat min_x, GLfloat min_y, GLfloat max_x, GL
 
 	WTransform[0][0] = (m_width - 1) / (max_x - min_x);
 	WTransform[1][1] = (m_height - 1) / (max_y - min_y);
+}
+
+void Renderer::SetFlags(bool bbox, bool show_normalsV, bool show_normalsF) {
+	this->bbox = bbox;
+	this->show_normalsF = show_normalsF;
+	this->show_normalsV = show_normalsV;
 }
 
 void Renderer::Init() {

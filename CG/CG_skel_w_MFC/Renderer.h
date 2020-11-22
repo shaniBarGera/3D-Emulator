@@ -16,6 +16,8 @@ class Renderer
 	mat4 WTransform;
 	mat4 Projection;
 	mat3 NTransform;
+
+	bool bbox;
 	
 	void CreateBuffers(int width, int height);
 	void CreateLocalBuffer();
@@ -39,7 +41,7 @@ public:
 	~Renderer(void);
 	void Init();
 	void DrawTriangles(const vector<vec3>* vertices, const vector<vec3>* normals = NULL);
-	void Drawline(int x1, int x2, int y1, int y2);
+	void Drawline(int x1, int x2, int y1, int y2, char color);
 	void SetCameraTransform(const mat4& cTransform);
 	void SetProjection(const mat4& projection);
 	void SetObjectMatrices(GLfloat min_x, GLfloat min_y, GLfloat max_x, GLfloat max_y, 
@@ -49,5 +51,6 @@ public:
 	void ClearDepthBuffer();
 	void SetDemoBuffer();
 	void reshape(int w,int h);
-	void setPixelOn(int x, int y);
+	void setPixelOn(int x, int y, char color);
+	void SetFlags(bool bbox, bool show_normalsV, bool show_normalsF);
 };

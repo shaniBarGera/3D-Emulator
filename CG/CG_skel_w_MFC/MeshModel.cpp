@@ -175,7 +175,10 @@ void MeshModel::loadFile(string fileName)
 		for (int i = 0; i < 3; i++)
 		{
 			vertex_positions.push_back(vertices[it->v[i]-1]); //CHANGE
-			//vertex_normal.push_back(vertices[it->vn[i] - 1]);
+			/*if (it->vn[i]) {
+				vertex_normal.push_back(vertices[it->vn[i] - 1]);
+			}*/
+			
 		}
 	}
 
@@ -192,6 +195,18 @@ void MeshModel::loadFile(string fileName)
 	vec4 c = vec4(0, 0, 1, -((max_z+min_z)/2));
 	vec4 d = vec4(0, 0, 0, 1);
 	m_transform = mat4(a,b,c,d);
+
+	for (int i = 0; i < vertex_positions.size() - 1; i += 3)
+	{
+		vec3 v1 = vertex_positions[i];
+		vec3 v2 = vertex_positions[i + 1];
+		vec3 v3 = vertex_positions[i + 2];
+
+		vec3 center = (v1 + v2 + v3) / 3;
+		f_normal.push_back(center);
+		vec3 normal = normalize(cross(v2 - v1, v3 - v1)) * 0.4;
+		f_normal.push_back(center + normal);
+	}
 }
 
 

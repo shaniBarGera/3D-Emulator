@@ -55,7 +55,8 @@ void Scene::draw()
 		 m_renderer->SetCameraTransform(cam->cTransform);
 		 m_renderer->SetObjectMatrices(model->min_x, model->min_y, model->max_x, model->max_y,
 				model->m_transform, model->_world_transform, model->_normal_transform);
-		 m_renderer->DrawTriangles(&model->vertex_positions, &model->vertex_normal);
+		 m_renderer->SetFlags(model->bbox, model->show_normalsV, model->show_normalsF);
+		 m_renderer->DrawTriangles(&model->vertex_positions, &model->f_normal);
 	}
 	if (models.size() > 0) {
 		m_renderer->SwapBuffers();
@@ -79,33 +80,23 @@ void Scene::_add_line(Model* m, vec3 v1, vec3 v2, vec3 v3) {
 //-------------------------------------NORMALS--------------------------------------------//
 
 void Scene::showNormalsV() {
-	m_renderer->show_normalsV = true;
+	MeshModel* model = (MeshModel*)models[activeModel];
+	model->show_normalsV = true;
 }
 
 void Scene::showNormalsF() {
 	MeshModel* model = (MeshModel*)models[activeModel];
-	vector<vec3> vertices = model->vertex_positions;
-	int j;
-	for (int i = 0; i < vertices.size() - 1; i += 3)
-	{
-		vec3 v1 = (vertices)[i];
-		vec3 v2 = (vertices)[i + 1];
-		vec3 v3 = (vertices)[i + 2];
-
-		vec3 center = (v1 + v2 + v3) / 3;
-		vec3 normal = normalize(cross(v2 - v1, v3 - v1));
-		model->f_normal.push_back(center);
-		model->f_normal.push_back(center + normal);
-	}
-		
+	model->show_normalsF = true;		
 }
 
 void Scene::removeNormalsV() {
-	m_renderer->show_normalsV = true;
+	MeshModel* model = (MeshModel*)models[activeModel];
+	model->show_normalsF = false;
 }
 
 void Scene::removeNormalsF() {
-	m_renderer->show_normalsF = true;
+	MeshModel* model = (MeshModel*)models[activeModel];
+	model->show_normalsF = false;
 }
 
 //-------------------------------------BBOX--------------------------------------------//
@@ -140,13 +131,18 @@ void Scene::bbox() {
 	vec3 v011(min_x, max_y, max_z);
 	vec3 v101(max_x, min_y, max_z);
 	vec3 v111(max_x, max_y, max_z);
-	_add_line(model, v000, v100, v110);
-	_add_line(model, v000, v010, v011);
-	_add_line(model, v000, v001, v101);
-	_add_line(model, v100, v101, v111);
-	_add_line(model, v001, v011, v111);
-	_add_line(model, v010, v110, v111);
-
+	_add_line(model, v000, v100, v100);
+	_add_line(model, v000, v010, v010);
+	_add_line(model, v000, v001, v001);
+	_add_line(model, v100, v101, v101);
+	_add_line(model, v100, v110, v110);
+	_add_line(model, v010, v110, v110);
+	_add_line(model, v010, v011, v011);
+	_add_line(model, v111, v110, v111);
+	_add_line(model, v111, v101, v101);
+	_add_line(model, v001, v101, v101);
+	_add_line(model, v001, v011, v011);
+	_add_line(model, v011, v111, v111);
 	model->bbox = true;
 }
 
@@ -295,7 +291,7 @@ Camera::Camera()
 	at = vec3(0, 0, 0);
 	up = vec3(0, 1, 0);
 	LookAt(eye, at, up);
-	//Ortho(1, 1, 1, 0, 1)
+	//Ortho(-5, 5, 0, 5, 3, -3);
 }
 
 Camera::Camera(vec3 eye, vec3 at, vec3 up)

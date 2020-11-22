@@ -15,7 +15,9 @@ protected :
 	
 public:
 	bool bbox = false;
-	char frame = 'm';
+	bool show_normalsV = false;
+	bool show_normalsF = false;
+
 	mat4 _world_transform;
 	mat3 _normal_transform;
 	mat4 m_transform;
