@@ -284,6 +284,7 @@ void Scene::addCam(string cmd, vec3 eye, vec3 at, vec3 up) {
 
 void Scene::render() {
 	// Allow the user to choose if the cameras should be rendered (as a small plus sign for example)
+	
 }
 
 void Scene::focus() {

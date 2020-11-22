@@ -53,6 +53,9 @@
 #define STEP_SCALE 2
 #define STEP_MOVE 3
 
+#define PROJ_ORT 1
+#define PROJ_PRES 2
+#define PROJ_GEO 3
 
 Scene* scene;
 Renderer* renderer;
@@ -78,14 +81,6 @@ vec3 dialogBoxVec(){
 		v = dlg.GetXYZ();
 	return v;
 }
-
-
-/*void camDialog(vec3* eye, vec3* at, vec3* up) {
-	CameraDialog dlg;
-	vec3 v;
-	if (dlg.DoModal() == IDOK)
-		dlg.GetXYZ(eye, at, up);
-}*/
 
 //----------------------------------------------------------------------------
 // Callbacks
@@ -336,10 +331,47 @@ void stepMenu(int id) {
 	}
 }
 
+void projMenu(int id) {
+	GLfloat left = 2, right = -2, bottom = 2, top = -2, zNear = 2, zFar = -2, fovy = 1, aspect = 2;
+	switch (id) {
+	case PROJ_ORT:
+		left = stof(dialogBox());
+		right = stof(dialogBox());
+		bottom = stof(dialogBox());
+		top = stof(dialogBox());
+		zNear = stof(dialogBox());
+		zFar = stof(dialogBox());
+		scene->ortho(left, right, bottom, top, zNear, zFar);
+		break;
+	case PROJ_PRES:
+		left = stof(dialogBox());
+		right = stof(dialogBox());
+		bottom = stof(dialogBox());
+		top = stof(dialogBox());
+		zNear = stof(dialogBox());
+		zFar = stof(dialogBox());
+		scene->frustum(left, right, bottom, top, zNear, zFar);
+		break;
+	case PROJ_GEO:
+		fovy = stof(dialogBox());
+		aspect = stof(dialogBox());
+		zNear = stof(dialogBox());
+		zFar = stof(dialogBox());
+		scene->perspective(fovy, aspect, zNear, zFar);
+		break;
+	}
+	
+}
+
 void initMenu()
 {
 	int menuFile = glutCreateMenu(fileMenu);
 	glutAddMenuEntry("Open..", FILE_OPEN);
+
+	int projFile = glutCreateMenu(projMenu);
+	glutAddMenuEntry("Orthogonal", PROJ_ORT);
+	glutAddMenuEntry("Prespective", PROJ_PRES);
+	glutAddMenuEntry("Geomtric Prespective", PROJ_GEO);
 
 	int camFile = glutCreateMenu(camMenu);
 	glutAddMenuEntry("Add", CAM_ADD);
@@ -348,6 +380,8 @@ void initMenu()
 	glutAddMenuEntry("Zoom In", CAM_ZOOMIN);
 	glutAddMenuEntry("Zoom Out", CAM_ZOOMOUT);
 	glutAddMenuEntry("Focus", CAM_FOCUS);
+	glutAddSubMenu("Projection", projFile);
+
 
 	int modelFile = glutCreateMenu(modelMenu);
 	glutAddMenuEntry("Set Active", MODEL_ACTIVE);
