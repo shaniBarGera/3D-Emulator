@@ -79,6 +79,14 @@ vec3 dialogBoxVec(){
 	return v;
 }
 
+
+/*void camDialog(vec3* eye, vec3* at, vec3* up) {
+	CameraDialog dlg;
+	vec3 v;
+	if (dlg.DoModal() == IDOK)
+		dlg.GetXYZ(eye, at, up);
+}*/
+
 //----------------------------------------------------------------------------
 // Callbacks
 
@@ -254,6 +262,7 @@ void camMenu(int id) {
 		eye = dialogBoxVec();
 		at = dialogBoxVec();
 		up = dialogBoxVec();
+		//camDialog(&eye, &at, &up);
 		scene->addCam(cmd, eye, at, up);
 		break;
 	case CAM_REND:

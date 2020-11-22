@@ -296,6 +296,21 @@ void Scene::focus() {
 	cam->LookAt(cam->eye, cam->at, cam->up);
 }
 
+void Scene::perspective(const float fovy, const float aspect, const float zNear, const float zFar) {
+	Camera* cam = (Camera*)cameras[activeCamera];
+	cam->Perspective(fovy, aspect, zNear, zFar);
+}
+
+void Scene::frustum(const float left, const float right, const float bottom, const float top, const float zNear, const float zFar) {
+	Camera* cam = (Camera*)cameras[activeCamera];
+	cam->Frustum(left, right, bottom, top, zNear, zFar);
+}
+
+void Scene::ortho(const float left, const float right, const float bottom, const float top, const float zNear, const float zFar) {
+	Camera* cam = (Camera*)cameras[activeCamera];
+	cam->Ortho(left, right, bottom, top, zNear, zFar);
+}
+
 /*--------------------------------------------------------------------*/
 /*                              CAMERA                                */
 /*--------------------------------------------------------------------*/
@@ -329,7 +344,9 @@ Camera::Camera()
 	at = vec3(0, 0, 0);
 	up = vec3(0, 1, 0);
 	LookAt(eye, at, up);
-	//Ortho(-5, 5, 0, 5, 3, -3);
+	Ortho(-2, 2, -2, 2, 0.5, -0.5);
+	//Perspective(2, 2, 1, 2);
+	//Frustum(-2, 2, -2, 2, 0.5, -0.5);
 }
 
 Camera::Camera(vec3 eye, vec3 at, vec3 up)
@@ -359,26 +376,25 @@ void Camera::Ortho(const float left, const float right, const float bottom, cons
 	vec4 b = vec4(0.0, 2 / (top - bottom), 0.0, -(top + bottom) / (top - bottom));
 	vec4 c = vec4(0.0, 0.0, -2 / (zFar - zNear), -(zFar + zNear) / (zFar - zNear));
 	vec4 d = vec4(0.0, 0.0, 0.0, 1.0);
-	setTransformation(mat4(a, b, c, d));
-	//projection = mat4(a, b, c, d);
+	projection = mat4(a, b, c, d);
 }
 
 void Camera::Perspective(const float fovy, const float aspect, const float zNear, const float zFar) {
 	vec4 a = vec4(1 / (aspect * tan(0.5f * fovy)), 0.0, 0.0, 0.0);
 	vec4 b = vec4(0.0, 1 / tan(0.5f * fovy), 0.0, 0.0);
 	vec4 c = vec4(0.0, 0.0, (-zNear - zFar) / (zNear - zFar), (2 * zNear * zFar) / (zNear - zFar));
-	vec4 d = vec4(0.0, 0.0, 1.0, 0.0);
-	setTransformation(mat4(a, b, c, d));
-	//projection = mat4(a, b, c, d);
+	vec4 d = vec4(0.0, 0.0, -1.0, 0.0);
+	//setTransformation(mat4(a, b, c, d));
+	projection = mat4(a, b, c, d);
 }
 
 
-mat4 Camera::Frustum(const float left, const float right,
+void Camera::Frustum(const float left, const float right,
 	const float bottom, const float top,
 	const float zNear, const float zFar) {
 	vec4 a = vec4(2 * zNear / (right - left), 0.0, (right + left) / (right - left), 0.0);
 	vec4 b = vec4(0.0, 2 * zNear / (top - bottom), (top + bottom) / (top - bottom), 0.0);
-	vec4 c = vec4(0.0, 0.0, -(zFar + zNear) / (zFar - zNear), 0.0);
+	vec4 c = vec4(0.0, 0.0, -(zFar + zNear) / (zFar - zNear), (-2 * zNear * zFar)/(zFar - zNear));
 	vec4 d = vec4(0.0, 0.0, -1.0, 0.0);
-	return mat4(a, b, c, d);
+	projection = mat4(a, b, c, d);
 }

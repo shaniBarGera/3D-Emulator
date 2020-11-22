@@ -35,7 +35,7 @@ public:
 	void Ortho(const float left, const float right,
 		const float bottom, const float top,
 		const float zNear, const float zFar);
-	mat4 Frustum(const float left, const float right,
+	void Frustum(const float left, const float right,
 		const float bottom, const float top,
 		const float zNear, const float zFar);
 	void Perspective(const float fovy, const float aspect,
@@ -66,6 +66,10 @@ public:
 	Scene(Renderer* renderer);
 	~Scene();
 	void loadOBJModel(string fileName);
+	void perspective(const float fovy, const float aspect, const float zNear, const float zFar);
+	void frustum(const float left, const float right, const float bottom, const float top, const float zNear, const float zFar);
+	void ortho(const float left, const float right, const float bottom, const float top, const float zNear, const float zFar);
+
 	void draw();
 	void drawDemo();
 	

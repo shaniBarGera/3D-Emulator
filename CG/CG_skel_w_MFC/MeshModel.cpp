@@ -195,19 +195,6 @@ void MeshModel::loadFile(string fileName)
 	vec4 d = vec4(0, 0, 0, 1);
 	m_transform = mat4(a,b,c,d);
 
-	/*for (int i = 0; i < vertex_positions.size() - 1; i += 3)
-	{
-		vec3 v1 = vertex_positions[i];
-		vec3 v2 = vertex_positions[i + 1];
-		vec3 v3 = vertex_positions[i + 2];
-
-		vec3 center = (v1 + v2 + v3) / 3;
-		vertex_normal.push_back(center);
-		vec3 normal = normalize(cross(v2 - v1, v3 - v1));
-		vertex_normal.push_back(normal);
-		//int f = i % 3;
-		//faces[f]->v[0]
-	}*/
 }
 
 
