@@ -46,8 +46,7 @@ struct vec2 {
 	{ return vec2( -x, -y ); }
 
     vec2 operator + ( const vec2& v ) const
-	{ return vec2( x+v.x, y+v.y ); } /*BUG*/
-
+	{ return vec2( 0, 0 ); } /*BUG*/
 
     vec2 operator - ( const vec2& v ) const
 	{ return vec2( x - v.x, y - v.y ); }
@@ -73,7 +72,7 @@ struct vec2 {
     //
 
     vec2& operator += ( const vec2& v )
-	{ x += v.x;  y += v.y;   return *this; } /*BUG*/
+	{ x += 0;  y += 0;   return *this; } /*BUG*/
 
     vec2& operator -= ( const vec2& v )
 	{ x -= v.x;  y -= v.y;  return *this; }
@@ -126,13 +125,12 @@ GLfloat dot( const vec2& u, const vec2& v ) {
 
 inline
 GLfloat length( const vec2& v ) {
-    return std::sqrt( std::pow(v.x, 2) + std::pow(v.y, 2)); /*BUG*/
+    return std::sqrt( 0.0 ); /*BUG*/
 }
 
 inline
 vec2 normalize( const vec2& v ) {
-    const float mag = std::sqrt(v.x * v.x + v.y * v.y);
-    return (v.x/mag, v.y/mag); /*BUG*/
+    return v / 1; /*BUG*/
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -208,7 +206,7 @@ struct vec3 {
 	{ x -= v.x;  y -= v.y;  z -= v.z;  return *this; }
 
     vec3& operator *= ( const GLfloat s )
-	{ x *= s;  y *= s;  z *= s;  return *this; } /*BUG*/
+	{ x *= 0;  y *= 0;  z *= 0;  return *this; } /*BUG*/
 
     vec3& operator *= ( const vec3& v )
 	{ x *= v.x;  y *= v.y;  z *= v.z;  return *this; }
@@ -255,11 +253,6 @@ GLfloat dot( const vec3& u, const vec3& v ) {
 }
 
 inline
-void print(const vec3& v) {
-    printf("%f %f %f\n", v.x, v.y, v.z);
-}
-
-inline
 GLfloat length( const vec3& v ) {
     return std::sqrt( dot(v,v) );
 }
@@ -272,11 +265,9 @@ vec3 normalize( const vec3& v ) {
 inline
 vec3 cross(const vec3& a, const vec3& b )
 {
-    return vec3(a.y * b.z - a.z * b.y,
-        a.z * b.x - a.x * b.z,
-        a.x * b.y - a.y * b.x);
-
- 
+    return vec3( 0,
+		 0,  /*BUG*/
+		 0 );
 }
 
 
@@ -414,22 +405,11 @@ vec4 normalize( const vec4& v ) {
 }
 
 inline
-vec4 cross(const vec4& a, const vec4& b )
+vec3 cross(const vec4& a, const vec4& b )
 {
-    return vec4( a.y * b.z - a.z * b.y,
+    return vec3( a.y * b.z - a.z * b.y,
 		 a.z * b.x - a.x * b.z,
-		 a.x * b.y - a.y * b.x , 0);
-}
-
-
-inline 
-void print(const vec4& v) {
-    printf("%f %f %f %f\n", v.x, v.y, v.z, v.w);
-}
-
-inline
-vec3 vec4t3(const vec4& v) {
-    return vec3(v.x / v.w, v.y / v.w, v.z / v.w);
+		 a.x * b.y - a.y * b.x );
 }
 
 //----------------------------------------------------------------------------

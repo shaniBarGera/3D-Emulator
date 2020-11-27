@@ -6,56 +6,6 @@
 #include <fstream>
 #include <sstream>
 
-GLfloat get_max_x(const vector<vec3>* vertices) {
-	GLfloat max = 0;
-	for (size_t i = 0; i < vertices->size() - 1; i++) {
-		if ((*vertices)[i].x >= max) max = (*vertices)[i].x;
-	}
-	return max;
-}
-
-GLfloat get_max_y(const vector<vec3>* vertices) {
-	GLfloat max = 0;
-	for (int i = 0; i < vertices->size() - 1; i++) {
-		if ((*vertices)[i].y >= max) max = (*vertices)[i].y;
-	}
-	return max;
-}
-
-GLfloat get_max_z(const vector<vec3>* vertices) {
-	GLfloat max = 0;
-	for (int i = 0; i < vertices->size() - 1; i++) {
-		if ((*vertices)[i].z >= max) max = (*vertices)[i].z;
-	}
-	return max;
-}
-
-GLfloat get_min_z(const vector<vec3>* vertices) {
-	GLfloat min = 10000;
-	for (int i = 0; i < vertices->size() - 1; i++) {
-		if ((*vertices)[i].z <= min) min = (*vertices)[i].z;
-	}
-	return min;
-}
-
-GLfloat get_min_x(const vector<vec3>* vertices) {
-	GLfloat min = 10000;
-	for (int i = 0; i < vertices->size() - 1; i++) {
-		if ((*vertices)[i].x <= min) min = (*vertices)[i].x;
-	}
-	return min;
-}
-
-GLfloat get_min_y(const vector<vec3>* vertices) {
-	GLfloat min = 10000;
-	for (int i = 0; i < vertices->size() - 1; i++) {
-		if ((*vertices)[i].y <= min) min = (*vertices)[i].y;
-	}
-	return min;
-}
-
-
-
 using namespace std;
 
 struct FaceIdcs
@@ -123,7 +73,7 @@ void MeshModel::loadFile(string fileName)
 {
 	ifstream ifile(fileName.c_str());
 	vector<FaceIdcs> faces;
-	vector<vec3> normals;
+	vector<vec3> vertices;
 	// while not end of file
 	while (!ifile.eof())
 	{
@@ -138,27 +88,17 @@ void MeshModel::loadFile(string fileName)
 		issLine >> std::ws >> lineType;
 
 		// based on the type parse data
-		if (lineType == "v") {
+		if (lineType == "?") /*BUG*/
 			vertices.push_back(vec3fFromStream(issLine));
-		}
-		else if (lineType == "f") {
+		else if (lineType == "?") /*BUG*/
 			faces.push_back(issLine);
-		}
-		else if (lineType == "vn") {
-			// vertex normal
-			normals.push_back(vec3fFromStream(issLine));
-			
-		}
 		else if (lineType == "#" || lineType == "")
 		{
 			// comment / empty line
 		}
-		else if (lineType == "mtllib" || lineType == "usemtl" || lineType == "g") {
-
-		}
 		else
 		{
-			cout << "Found unknown line Type \"" << lineType << "\"";
+			cout<< "Found unknown line Type \"" << lineType << "\"";
 		}
 	}
 	//Vertex_positions is an array of vec3. Every three elements define a triangle in 3D.
@@ -168,37 +108,21 @@ void MeshModel::loadFile(string fileName)
 	//Then vertex_positions should contain:
 	//vertex_positions={v1,v2,v3,v1,v3,v4}
 
+	vertex_positions = new vec3[7]; /*BUG*/
 	// iterate through all stored faces and create triangles
-	int k = 0;
+	int k=0;
 	for (vector<FaceIdcs>::iterator it = faces.begin(); it != faces.end(); ++it)
 	{
 		for (int i = 0; i < 3; i++)
 		{
-			vertex_positions.push_back(vertices[it->v[i]-1]); //CHANGE
-			vertex_normal.push_back(normals[it->vn[i] - 1]);
-
-			
+			vertex_positions[k++] = vec3(); /*BUG*/
 		}
 	}
-
-	min_x = get_min_x(&vertex_positions);
-	min_y = get_min_y(&vertex_positions);
-	min_z = get_min_z(&vertex_positions);
-	max_z = get_max_z(&vertex_positions);
-	max_x = get_max_x(&vertex_positions);
-	max_y = get_max_y(&vertex_positions);
-
-
-	vec4 a = vec4(1, 0, 0, -((max_x+min_x)/2));
-	vec4 b = vec4(0, 1, 0, -((max_y+min_y)/2));
-	vec4 c = vec4(0, 0, 1, -((max_z+min_z)/2));
-	vec4 d = vec4(0, 0, 0, 1);
-	m_transform = mat4(a,b,c,d);
-
 }
+
 
 
 void MeshModel::draw()
 {
-}
 	
+}
