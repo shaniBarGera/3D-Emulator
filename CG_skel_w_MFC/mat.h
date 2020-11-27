@@ -24,7 +24,7 @@ class mat2 {
 
 	/*BUG*/
     mat2( GLfloat m00, GLfloat m10, GLfloat m01, GLfloat m11 )
-	{ _m[0] = vec2( 0, 0 ); _m[1] = vec2( 0, 0 ); }
+	{ _m[0] = vec2( m00, m01 ); _m[1] = vec2( m10, m11); }
 
     mat2( const mat2& m ) {
 	if ( *this != m ) {
@@ -49,7 +49,7 @@ class mat2 {
 
 	
     mat2 operator - ( const mat2& m ) const
-	{ return mat2( 0, 0 ); } /*BUG*/
+	{ return mat2(_m[0].x-m[0].x, _m[1].x-m[1].x, _m[0].y-m[0].y, _m[1].y-m[1].y); } /*BUG*/
 
     mat2 operator * ( const GLfloat s ) const 
 	{ return mat2( s*_m[0], s*_m[1] ); }
@@ -64,11 +64,11 @@ class mat2 {
 	{ return m * s; }
 	
     mat2 operator * ( const mat2& m ) const {
-	mat2  a( 0.0 );
+	    mat2  a(_m[0].x * m[0].x + _m[0].y * m[1].x, _m[0].x * m[0].y + _m[0].y * m[1].y,
+                _m[1].x * m[0].x + _m[1].y * m[1].x, _m[1].x * m[0].y + _m[1].y * m[1].y);
+	    /*BUG*/
 
-	/*BUG*/
-
-	return a;
+	    return a;
     }
 
     //
@@ -81,7 +81,7 @@ class mat2 {
     }
 
     mat2& operator -= ( const mat2& m ) {
-	_m[0] -= 0;  _m[1] -= 0;  /*BUG*/
+	_m[0] -= m[0];  _m[1] -= m[1];  /*BUG*/
 	return *this;
     }
 
@@ -91,11 +91,12 @@ class mat2 {
     }
 
     mat2& operator *= ( const mat2& m ) {
-	mat2  a( 0.0 );
+        mat2  a(_m[0].x * m[0].x + _m[0].y * m[1].x, _m[0].x * m[0].y + _m[0].y * m[1].y,
+            _m[1].x * m[0].x + _m[1].y * m[1].x, _m[1].x * m[0].y + _m[1].y * m[1].y);
 
-	/*BUG*/
+	    /*BUG*/
 
-	return *this = a;
+	    return *this = a;
     }
     
     mat2& operator /= ( const GLfloat s ) {
@@ -278,9 +279,9 @@ class mat3 {
     //
 
     vec3 operator * ( const vec3& v ) const {  // m * v
-	return vec3( 0,
-		     0, /*BUG*/
-		     0 );
+        return vec3(_m[0].x * v.x + _m[0].y * v.y + _m[0].z * v.z,
+            _m[1].x * v.x + _m[1].y * v.y + _m[1].z * v.z,
+            _m[2].x * v.x + _m[2].y * v.y + _m[2].z * v.z);
     }
 	
     //
@@ -321,7 +322,7 @@ mat3 matrixCompMult( const mat3& A, const mat3& B ) {
 
 inline
 mat3 transpose( const mat3& A ) {
-    return mat3( 0,0,0,0,0,0,0,0,0); /*BUG*/
+    return mat3( A[0][0], A[1][0], A[2][0], A[0][1], A[1][1], A[2][1], A[0][2], A[1][2], A[2][2]); /*BUG*/
 }
 
 //----------------------------------------------------------------------------
@@ -501,12 +502,81 @@ mat4 matrixCompMult( const mat4& A, const mat4& B ) {
 }
 
 inline
-mat4 transpose( const mat4& A ) {
-    return mat4( A[0][0], A[1][0], A[2][0], A[3][0],
-		 A[0][1], A[1][1], A[2][1], A[3][1],
-		 A[0][2], A[1][2], A[2][2], A[3][2],
-		 A[0][3], A[1][3], A[2][3], A[3][3] );
+void print(const mat4& m) {
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            printf("%f ", m[i][j]);
+        }
+        printf("\n");
+    }
+    printf("\n");
 }
+
+inline
+mat4 transpose( const mat4& A ) {
+    return mat4( A[0][0], A[0][1], A[0][2], A[0][3],
+		 A[1][0], A[1][1], A[1][2], A[1][3],
+		 A[2][0], A[2][1], A[2][2], A[2][3],
+		 A[3][0], A[3][1], A[3][2], A[3][3] );
+}
+
+inline
+mat4 inverse(const mat4& A) {
+    int n = 4;
+    mat4 inverted_A = A;
+
+    for (int i = 0; i < n; i++) {
+        // Search for maximum in this column
+        GLfloat maxEl = abs(inverted_A[i][i]);
+        int maxRow = i;
+        for (int k = i + 1; k < n; k++) {
+            if (abs(A[k][i]) > maxEl) {
+                maxEl = inverted_A[k][i];
+                maxRow = k;
+            }
+        }
+
+        // Swap maximum row with current row (column by column)
+        for (int k = i; k < 2 * n; k++) {
+            GLfloat tmp = A[maxRow][k];
+            inverted_A[maxRow][k] = inverted_A[i][k];
+            inverted_A[i][k] = tmp;
+        }
+
+        // Make all rows below this one 0 in current column
+        for (int k = i + 1; k < n; k++) {
+            GLfloat c = -inverted_A[k][i] / inverted_A[i][i];
+            for (int j = i; j < 2 * n; j++) {
+                if (i == j) {
+                    inverted_A[k][j] = 0;
+                }
+                else {
+                    inverted_A[k][j] += c * inverted_A[i][j];
+                }
+            }
+        }
+    }
+
+    // Solve equation Ax=b for an upper triangular matrix A
+    for (int i = n - 1; i >= 0; i--) {
+        for (int k = n; k < 2 * n; k++) {
+            inverted_A[i][k] /= inverted_A[i][i];
+        }
+        // this is not necessary, but the output looks nicer:
+        inverted_A[i][i] = 1;
+
+        for (int rowModify = i - 1; rowModify >= 0; rowModify--) {
+            for (int columModify = n; columModify < 2 * n; columModify++) {
+                inverted_A[rowModify][columModify] -= inverted_A[i][columModify]
+                    * inverted_A[rowModify][i];
+            }
+            // this is not necessary, but the output looks nicer:
+            inverted_A[rowModify][i] = 0;
+        }
+    }
+    return inverted_A;
+}
+
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -537,14 +607,38 @@ vec4 mvmult( const mat4& a, const vec4& b )
 //
 
 inline
-mat4 RotateX( const GLfloat theta )
+mat4 RotateX(const GLfloat theta)
 {
-    GLfloat angle = (M_PI/180.0) * theta;
+    GLfloat angle = ((GLfloat)(M_PI/180.0)) * theta;
 
     mat4 c;
     c[2][2] = c[1][1] = cos(angle);
     c[2][1] = sin(angle);
     c[1][2] = -c[2][1];
+    return c;
+}
+
+inline
+mat4 RotateY(const GLfloat theta)
+{
+    GLfloat angle = ((GLfloat)(M_PI / 180.0)) * theta;
+
+    mat4 c;
+    c[0][0] = c[2][2] = cos(angle);
+    c[0][2] = sin(angle);
+    c[2][0] = -c[0][2];
+    return c;
+}
+
+inline
+mat4 RotateZ(const GLfloat theta)
+{
+    GLfloat angle = ((GLfloat)(M_PI / 180.0)) * theta;
+
+    mat4 c;
+    c[0][0] = c[1][1] = cos(angle);
+    c[1][0] = sin(angle);
+    c[0][1] = -c[1][0];
     return c;
 }
 
@@ -558,9 +652,9 @@ inline
 mat4 Translate( const GLfloat x, const GLfloat y, const GLfloat z )
 {
     mat4 c;
-    c[0][0] = x;
-    c[0][0] = y;  /*BUG*/
-    c[0][0] = z;
+    c[0][3] = x;
+    c[1][3] = y;  /*BUG*/
+    c[2][3] = z;
     return c;
 }
 
@@ -586,8 +680,8 @@ mat4 Scale( const GLfloat x, const GLfloat y, const GLfloat z )
 {
     mat4 c;
     c[0][0] = x;
-    c[0][0] = y; /*BUG*/
-    c[0][0] = z;
+    c[1][1] = y; /*BUG*/
+    c[2][2] = z;
     return c;
 }
 
@@ -596,5 +690,7 @@ mat4 Scale( const vec3& v )
 {
     return Scale( v.x, v.y, v.z );
 }
+
+
 
 //----------------------------------------------------------------------------
