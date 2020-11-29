@@ -58,6 +58,6 @@ public:
 	bool pixel_is_on(int x, int y, char color);
 	void SetFlags(bool bbox, bool show_normalsV, bool show_normalsF);
 	//void FillPolygon(vec3 p1, vec3 p2, vec3 p3, char color, vector<vector<int>>* curr_poly);
-	void FillPolygon(char color, vector<vector<int>>* curr_poly);
+	void FillPolygon(int min_x, int max_x, char color, vector<vector<int>>* curr_poly);
 	bool OnBoundary(int x, int y, vector<vector<int>>* curr_poly);
 };

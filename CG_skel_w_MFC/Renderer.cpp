@@ -124,14 +124,10 @@ void Renderer::Drawline(int x1, int x2, int y1, int y2, char color, vector<vecto
 		for (int I = 0; I < D; I++)
 		{
 			bool ans = setPixelOn(X, Y, color);
-			if (ans && curr_poly)(*curr_poly)[X][Y] = 1;
-			/*if (curr_poly) {
-				if (ans)(*curr_poly)[X][Y] = 1;
-				else {
-					if (Y < 0) (*curr_poly)[X][m_height] = -1;
-					else if (Y >= m_height) (*curr_poly)[X][m_height] = 1;
-				}
-			}*/
+			if (curr_poly && X >= 0 && X < m_width) {
+				(*curr_poly)[X].push_back(Y);
+			}
+		
 			//# Update (X, Y) and R
 			X += Sx; R += Dy; //# Lateral move
 			if (R >= Dx)
@@ -148,19 +144,10 @@ void Renderer::Drawline(int x1, int x2, int y1, int y2, char color, vector<vecto
 		{
 			
 			bool ans = setPixelOn(X, Y, color);
-			if (ans && curr_poly)(*curr_poly)[X][Y] = 1;
-			/*if (curr_poly) {
-				if (ans)(*curr_poly)[X][Y] = 1;
-				else {
-					if (Y < 0) { 
-						printf("reached here\n");
-						printf("height:%d width:%d Y:%d X:%d\n", m_height, m_width, Y, X);
-						printf("size:%d\n", (*curr_poly)[X].size()); 
-						(*curr_poly)[X][m_height] = -1; 
-					}
-					else if (Y >= m_height) (*curr_poly)[X][m_height] = 1;
-				}
-			}*/
+			if (curr_poly && X >= 0 && X < m_width) {
+				(*curr_poly)[X].push_back(Y);
+			}
+
 			//# Update (X, Y) and R
 			Y += Sy;
 			R += Dx; //# Lateral move
@@ -174,90 +161,17 @@ void Renderer::Drawline(int x1, int x2, int y1, int y2, char color, vector<vecto
 }
 
 
-void Renderer::FillPolygon(char color, vector<vector<int>>* curr_poly){
-	printf("FILL POLY\n");
+void Renderer::FillPolygon(int min_x, int max_x, char color, vector<vector<int>>* curr_poly){
+	//printf("FILL POLY\n");
 	if (!curr_poly) return;
 
-	/*for (int i = 0; i < m_height; ++i) {
-		for (int j = 0; j < m_width; ++j) {
-			if ((*curr_poly)[j][i])
-				printf(".");
-			else
-				printf(",");
-		}
-		printf("\n");
-	}*/
-	//printf("FILL POLY %d %d %d\n", (int)p1.x , (int)p2.x, (int)p3.x);
-
-	/*int min_x = min(min((int)p1.x, (int)p2.x), (int)p3.x) + 1;
-	int max_x = max(max((int)p1.x, (int)p2.x), (int)p3.x);
-	int min_y = min(min(p1.y, p2.y), p3.y) + 1;
-	int max_y = max(max(p1.y, p2.y), p3.y);*/
-	//int min_x = INFINITY, min_y = INFINITY, max_x = -INFINITY, max_y = -INFINITY;
-	//printf("y %d %d %d\n", (int)p1.y, (int)p2.y, (int)p3.y);
-	/*for (int i = 0; i < m_width; ++i) {
-		for (int j = 0; j < m_height; ++j) {
-			if ((*curr_poly)[i][j]) {
-				min_x = min(min_x, i);
-				min_y = min(min_y, j);
-				max_x = max(max_x, i);
-				max_y = max(max_y, j);
-			}
-		}
-	}
-	printf("FILL POLY: %d %d %d %d\n", min_x, min_y, max_x, max_y);*/
-
-	/*double m12 = ((int)p1.y - (int)p2.y != 0) ? ((int)p1.x - (int)p2.x) / ((int)p1.y - (int)p2.y): ((int)p1.x - (int)p2.x);
-	double n12 = (int)p1.y - (m12 * (int)p1.x);
-	double m13 = ((int)p1.y - (int)p3.y != 0) ? ((int)p1.x - (int)p3.x) / ((int)p1.y - (int)p3.y) : ((int)p1.x - (int)p3.x);
-	double n13 = (int)p1.y - (m13 * (int)p1.x);
-	double m23 = ((int)p3.y - (int)p2.y != 0) ? ((int)p3.x - (int)p2.x) / ((int)p3.y - (int)p2.y) : ((int)p3.x - (int)p2.x);
-	double n23 = (int)p2.y - (m23 * (int)p2.x);
-
-	printf("m 12:%f 13:%f 23:%f\n", m12, m13, m23);
-	printf("n 12:%f 13:%f 23:%f\n", n12, n13, n23);*/
-
 	for (int x = 0; x < m_width; ++x) {
-		//bool in_poly = false;
-		//int y12 = (int)(i * m12 + n12);
-		//int y13 = (int)(i * m13 + n13);
-		//int y23 = (int)(i * m23 + n23);
-		//printf("y 12:%d 13:%d 23:%d\n", y12, y13, y23);
-		//int max_y = max(max(y12, y13), y23);
-		//int min_y = min(min(y12, y13), y23);
-		int min_y = 10000000, max_y = -10000000;
-		//printf("min:%d max:%d\n", min_y, max_y);
-		for (int y = 0; y < m_height; ++y) {
-			if ((*curr_poly)[x][y] == 1) {
-				min_y = min(min_y, y);
-				max_y = max(max_y, y);
-			}
-		}
+		if ((*curr_poly)[x].size() <= 1) continue;
+		int max_y = min(*max_element((*curr_poly)[x].begin(), (*curr_poly)[x].end()), m_height);
+		int min_y = max(*min_element((*curr_poly)[x].begin(), (*curr_poly)[x].end()), 0);
 
-		if (min_y == max_y && (*curr_poly)[x][m_height] < 0) {
-			min_y = 0;
-		}else if (min_y == max_y && (*curr_poly)[x][m_height] > 0) {
-			max_y = m_height - 1;
-		} else if (min_y == 10000000 && max_y == -10000000) {
-			continue;
-		}
-
-		//printf("min:%d max:%d\n", min_y, max_y);
 		for (int y = min_y; y < max_y; ++y) {
-			//printf("i:%d j:%d\n", i, j);
-			//int curr_pixel = (*curr_poly)[x][y];
-			/*if (!in_poly && curr_pixel == 1) {
-				in_poly = true;
-			}
-			else if (in_poly && curr_pixel == 0) {
-				setPixelOn(i, j, color);
-			}
-			else if (in_poly && curr_pixel == 1) {
-				in_poly = false;
-			}*/
-			//if (OnBoundary(x, y, curr_poly) || pixel_is_on(x, y, color)) break;
 			setPixelOn(x, y, color);
-
 		}
 	}
 
@@ -270,16 +184,6 @@ bool Renderer::OnBoundary(int x, int y, vector<vector<int>>* curr_poly) {
 	return (*curr_poly)[x][y];
 }
 
-/*void Renderer::FillPolygon(vector<vector<int>>* curr_poly, int x, int y, char color) {
-	printf("FILL POLY %d %d\n", x, y);
-	if (!curr_poly || x < 0 || x >= m_width || y < 0 || y >= m_width) return;
-	if (OnBoundary(x, y, curr_poly)|| pixel_is_on(x, y, color)) return;
-	setPixelOn(x, y, color);
-	FillPolygon(curr_poly, x + 1, y, color);
-	FillPolygon(curr_poly, x, y + 1, color);
-	FillPolygon(curr_poly, x, y - 1, color);
-	//FillPolygon(curr_poly, x - 1, y, color);
-}*/
 
 void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertices, const vector<vec3>* normals) {
 	printf("DRAW TRIANGLE\n");
@@ -329,13 +233,16 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 		
 		char color = 'p';
 
-		vector<vector<int>> curr_poly(m_width, vector<int>(m_height + 1));
+		vector<vector<int>> curr_poly(m_width);
 
 		Drawline(p[0].x, p[1].x, p[0].y, p[1].y, color, &curr_poly);
 		Drawline(p[2].x, p[1].x, p[2].y, p[1].y, color, &curr_poly);
 		Drawline(p[0].x, p[2].x, p[0].y, p[2].y, color, &curr_poly);
 
-		FillPolygon(color, &curr_poly);
+		int min_x = min(min(p[0].x, p[1].x), p[2].x);
+		int max_x = max(max(p[0].x, p[1].x), p[2].x);
+
+		FillPolygon(min_x, max_x, color, &curr_poly);
 
 		vec4 v1 = (*vertices)[i];
 		vec4 v2 = (*vertices)[i + 1];
