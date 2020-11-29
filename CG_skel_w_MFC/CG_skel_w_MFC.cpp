@@ -1,4 +1,4 @@
-// CG_skel_w_MFC.cpp : Defines the entry point for the console application.
+ // CG_skel_w_MFC.cpp : Defines the entry point for the console application.
 //
 
 #include "stdafx.h"
@@ -29,10 +29,6 @@
 #define CAM_ADD 1
 #define CAM_REND 2
 #define CAM_ACTIVE 3
-#define CAM_ZOOMIN 4
-#define CAM_ZOOMOUT 5
-#define CAM_FOCUS 6
-#define CAM_XREND 7
 
 #define FILE_OPEN 1
 
@@ -41,14 +37,12 @@
 #define MAIN_PRIM 3
 
 #define MODEL_ACTIVE 1
-#define MODEL_NORMAL_V 2
-#define MODEL_NORMAL_F 3
-#define MODEL_BBOX 4
-#define MODEL_UNBBOX 5
-#define MODEL_WFRAME 6
-#define MODEL_MFRAME 7
-#define MODEL_XNORMAL_V 8
-#define MODEL_XNORMAL_F 9
+
+#define FRAME_WORLD 1
+#define FRAME_MODEL 2
+
+#define NORMAL_FACE 1
+#define NORMAL_VERTEX 2
 
 #define STEP_ROTATE 1
 #define STEP_SCALE 2
@@ -58,8 +52,8 @@
 #define PROJ_PRES 2
 #define PROJ_GEO 3
 
-#define FRAME_MODEL 1
-#define FRAME_WORLD 2
+#define CAM_FRAME_VIEW 1
+#define CAM_FRAME_WORLD 2
 
 Scene* scene;
 Renderer* renderer;
@@ -91,7 +85,7 @@ vec3 dialogBoxVec(CString s){
 
 void display(void)
 {
-	//printf("DISPLAY\n");
+	printf("DISPLAY\n");
 	//Call the scene and ask it to draw itself
 	//scene* new_scene = new scene(fileName);
 	scene->draw(); //CHANGE
@@ -155,7 +149,28 @@ void keyboard(unsigned char key, int x, int y)
 	case 'Z':
 		scene->rotate('Z');
 		break;
+
+
+	case 'w': // camera up
+		scene->camMove('u');
+		break;
+	case 'a': // camera left
+		scene->camMove('l');
+		break;
+	case 's': // camera down
+		scene->camMove('d');
+		break;
+	case 'd':  // camera right
+		scene->camMove('r');
+		break;
+	case 'A':
+		scene->camMove('c');
+		break;
+	case 'D':
+		scene->camMove('f');
+		break;
 	}
+	printf("REDISPLAY\n");
 	glutPostRedisplay();
 }
 
@@ -271,9 +286,6 @@ void camMenu(int id) {
 	case CAM_REND:
 		scene->render();
 		break;
-	case CAM_XREND:
-		scene->unrender();
-		break;
 	case CAM_ACTIVE:
 		curr_cam = stoi(dialogBox("Active Camera Number"));
 		while (curr_cam < 0 || curr_cam >= scene->cameras.size()) {
@@ -282,14 +294,17 @@ void camMenu(int id) {
 		}
 		scene->activeCamera = curr_cam;
 		break;
-	case CAM_FOCUS:
-		scene->focus();
+	}
+}
+
+void normalMenu(int id) {
+	switch (id)
+	{
+	case NORMAL_VERTEX:
+		scene->showNormalsV();
 		break;
-	case CAM_ZOOMIN:
-		scene->zoomIn();
-		break;
-	case CAM_ZOOMOUT:
-		scene->zoomOut();
+	case NORMAL_FACE:
+		scene->showNormalsF();
 		break;
 	}
 }
@@ -298,18 +313,6 @@ void modelMenu(int id) {
 	int curr_model;
 	switch (id)
 	{
-	case MODEL_NORMAL_V:
-		scene->showNormalsV();
-		break;
-	case MODEL_NORMAL_F:
-		scene->showNormalsF();
-		break;
-	case MODEL_XNORMAL_V:
-		scene->removeNormalsV();
-		break;
-	case MODEL_XNORMAL_F:
-		scene->removeNormalsF();
-		break;
 	case MODEL_ACTIVE:
 		curr_model = stoi(dialogBox("Active Model Number"));
 		while (curr_model < 0 || curr_model >= scene->models.size()) {
@@ -318,12 +321,6 @@ void modelMenu(int id) {
 		}
 		scene->activeCamera = curr_model;
 		scene->activeModel = curr_model;
-		break;
-	case MODEL_BBOX:
-		scene->bbox();
-		break;
-	case MODEL_UNBBOX:
-		scene->unbbox();
 		break;
 	}
 }
@@ -345,10 +342,21 @@ void stepMenu(int id) {
 void frameMenu(int id) {
 	switch (id) {
 	case FRAME_MODEL:
-		scene->modelFrame();
+		scene->modelFrame('m');
 		break;
 	case FRAME_WORLD:
-		scene->worldFrame();
+		scene->modelFrame('w');
+		break;
+	}
+}
+
+void camFrameMenu(int id) {
+	switch (id) {
+	case CAM_FRAME_VIEW:
+		scene->camFrame('v');
+		break;
+	case CAM_FRAME_WORLD:
+		scene->camFrame('w');
 		break;
 	}
 }
@@ -395,28 +403,29 @@ void initMenu()
 	glutAddMenuEntry("Prespective", PROJ_PRES);
 	glutAddMenuEntry("Prespective by Aspect Ratio", PROJ_GEO);
 
+	int camFrameFile = glutCreateMenu(camFrameMenu);
+	glutAddMenuEntry("View", CAM_FRAME_VIEW);
+	glutAddMenuEntry("World", CAM_FRAME_WORLD);
+
 	int camFile = glutCreateMenu(camMenu);
 	glutAddMenuEntry("Add", CAM_ADD);
 	glutAddMenuEntry("Set Active", CAM_ACTIVE);
 	glutAddMenuEntry("Render", CAM_REND);
-	glutAddMenuEntry("Unrender", CAM_XREND);
 	glutAddSubMenu("Projection", projFile);
+	glutAddSubMenu("Frame", camFrameFile);
 
 	int frameFile = glutCreateMenu(frameMenu);
 	glutAddMenuEntry("Model", FRAME_MODEL);
 	glutAddMenuEntry("World", FRAME_WORLD);
 
+	int normalFile = glutCreateMenu(normalMenu);
+	glutAddMenuEntry("Face", NORMAL_FACE);
+	glutAddMenuEntry("Vertex", NORMAL_VERTEX);
+
 	int modelFile = glutCreateMenu(modelMenu);
 	glutAddMenuEntry("Set Active", MODEL_ACTIVE);
-	glutAddMenuEntry("Normals per Face", MODEL_NORMAL_F);
-	glutAddMenuEntry("Normals per Vertex", MODEL_NORMAL_V);
-	glutAddMenuEntry("Remove Normals per Face", MODEL_XNORMAL_F);
-	glutAddMenuEntry("Remove Normals per Vertex", MODEL_XNORMAL_V);
-	glutAddMenuEntry("Add Bounding Box", MODEL_BBOX);
-	glutAddMenuEntry("Remove Bounding Box", MODEL_UNBBOX);
+	glutAddSubMenu("Normals", normalFile);
 	glutAddSubMenu("Frame", frameFile);
-	
-
 
 	int stepFile = glutCreateMenu(stepMenu);
 	glutAddMenuEntry("Rotate", STEP_ROTATE);

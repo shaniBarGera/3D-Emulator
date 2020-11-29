@@ -3,6 +3,7 @@
 #include "CG_skel_w_MFC.h"
 #include "InitShader.h"
 #include "GL\freeglut.h"
+#include <algorithm>
 
 #define INDEX(width,x,y,c) (x+y*width)*3+c
 
@@ -53,44 +54,42 @@ void Renderer::SetDemoBuffer()
 	}
 }
 
-bool Renderer::_setPixelOn(int x, int y, int r, int g, int b) {
-	if (m_outBuffer[INDEX(m_width - 1, x, y, 0)] != r ||
-		m_outBuffer[INDEX(m_width - 1, x, y, 1)] != g ||
-		m_outBuffer[INDEX(m_width - 1, x, y, 2)] != b) {
-		m_outBuffer[INDEX(m_width - 1, x, y, 0)] = r;
-		m_outBuffer[INDEX(m_width - 1, x, y, 1)] = g;
-		m_outBuffer[INDEX(m_width - 1, x, y, 2)] = b;
-		return true;
+bool Renderer::setPixelOn(int x, int y, char color) {
+	//printf("SET PIXEL ON %d %d\n", x, y);
+	if (x < 0 || x >= m_width || y < 0 || y >= m_width) { 
+		return false; 
 	}
-	return false;
-
+	string code = get_color(color);
+	m_outBuffer[INDEX(m_width - 1, x, y, 0)] = code[0] - '0';
+	m_outBuffer[INDEX(m_width - 1, x, y, 1)] = code[1] - '0';
+	m_outBuffer[INDEX(m_width - 1, x, y, 2)] = code[2] - '0';
+	return true;
 }
 
-bool Renderer::setPixelOn(int x, int y, char color) {
-	if (x < 0 || x >= m_width || y < 0 || y >= m_height) return true;
-	
+string Renderer::get_color(char color) {
 	switch (color) {
-	case 'r' :
-		return _setPixelOn(x, y, 1, 0, 0);
-		break;
+	case 'r':
+		return "100";
 	case 'g':
-		return _setPixelOn(x, y, 0, 1, 0);
-		break;
+		return "010";
 	case 'b':
-		return _setPixelOn(x, y, 0, 0, 1);
-		break;
+		return "001";
 	case 'p':
-		return _setPixelOn(x, y, 1, 0, 1);
-		break;
+		return "101";
 	case 't':
-		return _setPixelOn(x, y, 0, 1, 1);
-		break;
+		return "011";
 	case 'w':
-		return _setPixelOn(x, y, 1, 1, 1);
-		break;
+		return "111";
 	}
+	return "000";
+}
 
-	return false;
+bool Renderer::pixel_is_on(int x, int y, char color) {
+	//printf("PIXEL IS ON\n");
+	string code = get_color(color);
+	return (m_outBuffer[INDEX(m_width - 1, x, y, 0)] == code[0] - '0' &&
+		m_outBuffer[INDEX(m_width - 1, x, y, 1)] == code[1] - '0' &&
+		m_outBuffer[INDEX(m_width - 1, x, y, 2)] == code[2] - '0');
 }
 
 int Sign(int dxy)
@@ -100,7 +99,7 @@ int Sign(int dxy)
 	else return 0;
 }
 
-void Renderer::Drawline(int x1, int x2, int y1, int y2, char color) {
+void Renderer::Drawline(int x1, int x2, int y1, int y2, char color, vector<vector<int>>* curr_poly) {
 	//printf("draw line %d %d %d %d\n", x1, x2, y1, y2);
 	int Dx = x2 - x1;
 	int Dy = y2 - y1;
@@ -124,7 +123,15 @@ void Renderer::Drawline(int x1, int x2, int y1, int y2, char color) {
 		//# Main loop
 		for (int I = 0; I < D; I++)
 		{
-			setPixelOn(X, Y, color);
+			bool ans = setPixelOn(X, Y, color);
+			if (ans && curr_poly)(*curr_poly)[X][Y] = 1;
+			/*if (curr_poly) {
+				if (ans)(*curr_poly)[X][Y] = 1;
+				else {
+					if (Y < 0) (*curr_poly)[X][m_height] = -1;
+					else if (Y >= m_height) (*curr_poly)[X][m_height] = 1;
+				}
+			}*/
 			//# Update (X, Y) and R
 			X += Sx; R += Dy; //# Lateral move
 			if (R >= Dx)
@@ -139,7 +146,21 @@ void Renderer::Drawline(int x1, int x2, int y1, int y2, char color) {
 		//# Main loop
 		for (int I = 0; I < D; I++)
 		{
-			setPixelOn(X, Y, color);
+			
+			bool ans = setPixelOn(X, Y, color);
+			if (ans && curr_poly)(*curr_poly)[X][Y] = 1;
+			/*if (curr_poly) {
+				if (ans)(*curr_poly)[X][Y] = 1;
+				else {
+					if (Y < 0) { 
+						printf("reached here\n");
+						printf("height:%d width:%d Y:%d X:%d\n", m_height, m_width, Y, X);
+						printf("size:%d\n", (*curr_poly)[X].size()); 
+						(*curr_poly)[X][m_height] = -1; 
+					}
+					else if (Y >= m_height) (*curr_poly)[X][m_height] = 1;
+				}
+			}*/
 			//# Update (X, Y) and R
 			Y += Sy;
 			R += Dx; //# Lateral move
@@ -153,27 +174,115 @@ void Renderer::Drawline(int x1, int x2, int y1, int y2, char color) {
 }
 
 
-void Renderer::FillPolygon(vec3 p1, vec3 p2, vec3 p3, char color){
-	int min_x = min(min(p1.x, p2.x), p3.x) + 1;
-	int max_x = max(max(p1.x, p2.x), p3.x);
+void Renderer::FillPolygon(char color, vector<vector<int>>* curr_poly){
+	printf("FILL POLY\n");
+	if (!curr_poly) return;
+
+	/*for (int i = 0; i < m_height; ++i) {
+		for (int j = 0; j < m_width; ++j) {
+			if ((*curr_poly)[j][i])
+				printf(".");
+			else
+				printf(",");
+		}
+		printf("\n");
+	}*/
+	//printf("FILL POLY %d %d %d\n", (int)p1.x , (int)p2.x, (int)p3.x);
+
+	/*int min_x = min(min((int)p1.x, (int)p2.x), (int)p3.x) + 1;
+	int max_x = max(max((int)p1.x, (int)p2.x), (int)p3.x);
 	int min_y = min(min(p1.y, p2.y), p3.y) + 1;
-	int max_y = max(max(p1.y, p2.y), p3.y);
-	for (int i = min_x; i < max_x; ++i) {
-		bool first_x = true;
-		for (int j = min_y; j < max_y; ++j) {
-			if (!setPixelOn(i, j, color)) { // if the pixel was already on
-				if (first_x)
-					first_x = false;
-				else
-					break;
+	int max_y = max(max(p1.y, p2.y), p3.y);*/
+	//int min_x = INFINITY, min_y = INFINITY, max_x = -INFINITY, max_y = -INFINITY;
+	//printf("y %d %d %d\n", (int)p1.y, (int)p2.y, (int)p3.y);
+	/*for (int i = 0; i < m_width; ++i) {
+		for (int j = 0; j < m_height; ++j) {
+			if ((*curr_poly)[i][j]) {
+				min_x = min(min_x, i);
+				min_y = min(min_y, j);
+				max_x = max(max_x, i);
+				max_y = max(max_y, j);
 			}
 		}
 	}
+	printf("FILL POLY: %d %d %d %d\n", min_x, min_y, max_x, max_y);*/
+
+	/*double m12 = ((int)p1.y - (int)p2.y != 0) ? ((int)p1.x - (int)p2.x) / ((int)p1.y - (int)p2.y): ((int)p1.x - (int)p2.x);
+	double n12 = (int)p1.y - (m12 * (int)p1.x);
+	double m13 = ((int)p1.y - (int)p3.y != 0) ? ((int)p1.x - (int)p3.x) / ((int)p1.y - (int)p3.y) : ((int)p1.x - (int)p3.x);
+	double n13 = (int)p1.y - (m13 * (int)p1.x);
+	double m23 = ((int)p3.y - (int)p2.y != 0) ? ((int)p3.x - (int)p2.x) / ((int)p3.y - (int)p2.y) : ((int)p3.x - (int)p2.x);
+	double n23 = (int)p2.y - (m23 * (int)p2.x);
+
+	printf("m 12:%f 13:%f 23:%f\n", m12, m13, m23);
+	printf("n 12:%f 13:%f 23:%f\n", n12, n13, n23);*/
+
+	for (int x = 0; x < m_width; ++x) {
+		//bool in_poly = false;
+		//int y12 = (int)(i * m12 + n12);
+		//int y13 = (int)(i * m13 + n13);
+		//int y23 = (int)(i * m23 + n23);
+		//printf("y 12:%d 13:%d 23:%d\n", y12, y13, y23);
+		//int max_y = max(max(y12, y13), y23);
+		//int min_y = min(min(y12, y13), y23);
+		int min_y = 10000000, max_y = -10000000;
+		//printf("min:%d max:%d\n", min_y, max_y);
+		for (int y = 0; y < m_height; ++y) {
+			if ((*curr_poly)[x][y] == 1) {
+				min_y = min(min_y, y);
+				max_y = max(max_y, y);
+			}
+		}
+
+		if (min_y == max_y && (*curr_poly)[x][m_height] < 0) {
+			min_y = 0;
+		}else if (min_y == max_y && (*curr_poly)[x][m_height] > 0) {
+			max_y = m_height - 1;
+		} else if (min_y == 10000000 && max_y == -10000000) {
+			continue;
+		}
+
+		//printf("min:%d max:%d\n", min_y, max_y);
+		for (int y = min_y; y < max_y; ++y) {
+			//printf("i:%d j:%d\n", i, j);
+			//int curr_pixel = (*curr_poly)[x][y];
+			/*if (!in_poly && curr_pixel == 1) {
+				in_poly = true;
+			}
+			else if (in_poly && curr_pixel == 0) {
+				setPixelOn(i, j, color);
+			}
+			else if (in_poly && curr_pixel == 1) {
+				in_poly = false;
+			}*/
+			//if (OnBoundary(x, y, curr_poly) || pixel_is_on(x, y, color)) break;
+			setPixelOn(x, y, color);
+
+		}
+	}
+
+
 }
 
+bool Renderer::OnBoundary(int x, int y, vector<vector<int>>* curr_poly) {
+	//printf("ON BOUNDARY\n");
+
+	return (*curr_poly)[x][y];
+}
+
+/*void Renderer::FillPolygon(vector<vector<int>>* curr_poly, int x, int y, char color) {
+	printf("FILL POLY %d %d\n", x, y);
+	if (!curr_poly || x < 0 || x >= m_width || y < 0 || y >= m_width) return;
+	if (OnBoundary(x, y, curr_poly)|| pixel_is_on(x, y, color)) return;
+	setPixelOn(x, y, color);
+	FillPolygon(curr_poly, x + 1, y, color);
+	FillPolygon(curr_poly, x, y + 1, color);
+	FillPolygon(curr_poly, x, y - 1, color);
+	//FillPolygon(curr_poly, x - 1, y, color);
+}*/
 
 void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertices, const vector<vec3>* normals) {
-	//printf("DRAW TRIANGLE\n");
+	printf("DRAW TRIANGLE\n");
 
 	for (int j = 0; j < eye->size(); j++) {
 		vec4 temp = vec4((*eye)[j]);
@@ -185,10 +294,10 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 	}
 
 	int length = (bbox) ? vertices->size() - 36 : vertices->size();
+
 	for (int i = 0; i < length; i+=3)
 	{
-		GLfloat x[3] = { 0 };
-		GLfloat y[3] = { 0 };
+		vec3 p[3];
 		vec4 center(0);
 
 		vec4 f_normal;
@@ -196,7 +305,7 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 		for (int j = 0; j < 3; j++) {
 			center += vec4((*vertices)[i + j]);
 			vec4 temp = WTransform * MTransform * vec4((*vertices)[i + j]);
-			vec4 normal = NTransform * vec4((*normals)[i + j]) * 0.2;
+			vec4 normal = NWTransform * NTransform * vec4((*normals)[i + j]) * 0.2;
 			normal.w = 0;
 			
 			if (j == 0) {
@@ -211,24 +320,22 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 			vec3 n = vec4t3(normal);
 
 			vec3 v = vec4t3(temp);
-			x[j] = v.x;
-			y[j] = v.y;
-
+			p[j] = v;
 
 			if (show_normalsV) {
-				Drawline(x[j], n.x, y[j], n.y, 'g');
+				Drawline(v.x, n.x, v.y, n.y, 'g');
 			}
 		}
 		
 		char color = 'p';
 
-		Drawline(x[0], x[1], y[0], y[1], color);
-		Drawline(x[2], x[1], y[2], y[1], color);
-		Drawline(x[0], x[2], y[0], y[2], color);
-	
-		FillPolygon(vec3(x[0], y[0], 0), vec3(x[1], y[1], 0),
-			vec3(x[2], y[2], 0), 't');
+		vector<vector<int>> curr_poly(m_width, vector<int>(m_height + 1));
 
+		Drawline(p[0].x, p[1].x, p[0].y, p[1].y, color, &curr_poly);
+		Drawline(p[2].x, p[1].x, p[2].y, p[1].y, color, &curr_poly);
+		Drawline(p[0].x, p[2].x, p[0].y, p[2].y, color, &curr_poly);
+
+		FillPolygon(color, &curr_poly);
 
 		vec4 v1 = (*vertices)[i];
 		vec4 v2 = (*vertices)[i + 1];
@@ -384,11 +491,12 @@ void Renderer::SetScreenTransform(GLfloat min_x, GLfloat min_y, GLfloat max_x, G
 	STransform[0][0] = m_width / 2;
 	STransform[1][1] = m_height / 2;
 }
-void Renderer::SetObjectMatrices(const mat4& mTranslate, const mat4& mTransform, const mat4& wTransform, const mat4& nTransform) {
+void Renderer::SetObjectMatrices(const mat4& mTranslate, const mat4& mTransform, const mat4& wTransform, const mat4& nTransform, const mat4& nwTransform) {
 	MTransform = mTransform;
-	NTransform = nTransform;
+	NTransform = nwTransform * nTransform;
 	WTransform = wTransform;
 	MTranslate = mTranslate;
+	
 }
 
 void Renderer::SetFlags(bool bbox, bool show_normalsV, bool show_normalsF) {

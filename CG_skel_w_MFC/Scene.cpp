@@ -16,6 +16,7 @@ Scene::Scene() {
 	step_move = 0.01;
 	step_rotate = 10;
 	step_scale = 1;
+	step_cam = 1;
 }
 
 Scene::Scene(Renderer* renderer) {
@@ -27,6 +28,7 @@ Scene::Scene(Renderer* renderer) {
 	step_move = 0.01;
 	step_rotate = 10;
 	step_scale = 0.1;
+	step_cam = 1;
 }
 
 Scene::~Scene() {
@@ -44,6 +46,7 @@ void Scene::loadOBJModel(string fileName)
 
 void Scene::draw()
 {
+	printf("DRAW\n");
 	vector<vec3> eyes;
 	for (size_t i = 0; i < cameras.size(); ++i) {
 		if (cameras[i]->rendered) 
@@ -56,7 +59,7 @@ void Scene::draw()
 		 MeshModel* model = (MeshModel*)models[i];
 		 m_renderer->SetScreenTransform(model->min_x, model->min_y, model->max_x, model->max_y);
 		 m_renderer->SetCameraMatrices(cam->cTransform, cam->projection);
-		 m_renderer->SetObjectMatrices(model->m_translate, model->m_transform, model->_world_transform, model->_normal_transform);
+		 m_renderer->SetObjectMatrices(model->m_translate, model->m_transform, model->_world_transform, model->_normal_transform, model->_normal_world_transform);
 		 m_renderer->SetFlags(model->bbox, model->show_normalsV, model->show_normalsF);
 		 m_renderer->DrawTriangles(&eyes, &model->vertex_positions, &model->vertex_normal);
 	}
@@ -83,38 +86,24 @@ void Scene::_add_line(Model* m, vec3 v1, vec3 v2, vec3 v3) {
 
 void Scene::showNormalsV() {
 	MeshModel* model = (MeshModel*)models[activeModel];
-	model->show_normalsV = true;
+	model->show_normalsV = !model->show_normalsV;
 }
 
 void Scene::showNormalsF() {
 	MeshModel* model = (MeshModel*)models[activeModel];
-	model->show_normalsF = true;		
-}
-
-void Scene::removeNormalsV() {
-	MeshModel* model = (MeshModel*)models[activeModel];
-	model->show_normalsV = false;
-}
-
-void Scene::removeNormalsF() {
-	MeshModel* model = (MeshModel*)models[activeModel];
-	model->show_normalsF = false;
+	model->show_normalsF = !model->show_normalsF;
 }
 
 //-------------------------------------BBOX--------------------------------------------//
 
 
-void Scene::unbbox() {
-	//printf("RESIZE\n");
-	MeshModel* model = (MeshModel*)models[activeModel];
-	if (!model->bbox) return;
-	model->vertex_positions.resize(model->vertex_positions.size() - 18);
-	model->bbox = false;
-}
-
 void Scene::bbox() {
 	MeshModel* model = (MeshModel*)models[activeModel];
-	if (model->bbox) return;
+	if (model->bbox) {
+		model->vertex_positions.resize(model->vertex_positions.size() - 36);
+		model->bbox = false;
+		return;
+	}
 
 	GLfloat min_x = model->min_x;
 	GLfloat min_y = model->min_y;
@@ -173,8 +162,16 @@ void Scene::rotate(char cord) {
 		temp = RotateZ(-curr_step);
 		break;
 	}
-	model->m_transform = temp * model->m_transform;
-	model->_normal_transform = temp * model->_normal_transform;
+
+	if (model->frame == 'm') {
+		model->m_transform = temp * model->m_transform;
+		model->_normal_transform = temp * model->_normal_transform;
+		
+	} else if (model->frame == 'w') {
+		model->_world_transform = temp * model->_world_transform;
+		model->_normal_world_transform = temp * model->_normal_world_transform;
+	}
+
 }
 
 void Scene::scale(char dir) {
@@ -216,9 +213,6 @@ void Scene::scale(char dir) {
 		temp_normal[0][0] -= curr_step;
 		temp_normal[1][1] -= curr_step;
 		temp_normal[2][2] -= curr_step;
-		//temp_normal[0][0] = 1 / temp[0][0];
-		//temp_normal[1][1] = 1 / temp[1][1];
-		//temp_normal[2][2] = 1 / temp[2][2];
 		break;
 	case '+':
 		temp[0][0] += curr_step;
@@ -227,14 +221,17 @@ void Scene::scale(char dir) {
 		temp_normal[0][0] += curr_step;
 		temp_normal[1][1] += curr_step;
 		temp_normal[2][2] += curr_step;
-		//temp_normal[0][0] = 1 / temp[0][0];
-		//temp_normal[1][1] = 1 / temp[1][1];
-		//temp_normal[2][2] = 1 / temp[2][2];
 		break;
 	}
-	model->m_transform *= temp;
-	model->_normal_transform *= temp;
+	if (model->frame == 'm') {
+		model->m_transform = temp * model->m_transform;
+		model->_normal_transform = temp * model->_normal_transform;
 
+	}
+	else if (model->frame == 'w') {
+		model->_world_transform = temp * model->_world_transform;
+		model->_normal_world_transform = temp * model->_normal_world_transform;
+	}
 }
 
 void Scene::zoomIn() {
@@ -288,16 +285,51 @@ void Scene::addCam(string cmd, vec3 eye, vec3 at, vec3 up) {
 void Scene::render() {
 	// Allow the user to choose if the cameras should be rendered (as a small plus sign for example)
 	Camera* cam = (Camera*)cameras[activeCamera];
-	cam->rendered = true;
+	cam->rendered = !cam->rendered;
 	
 }
 
-
-void Scene::unrender() {
-	// Allow the user to choose if the cameras should be rendered (as a small plus sign for example)
+void Scene::camFrame(char frame) {
 	Camera* cam = (Camera*)cameras[activeCamera];
-	cam->rendered = false;
+	if (frame == 'w')
+		cam->at = vec3(0, 0, 0);
+	else if (frame == 'v')
+		focus();
+}
 
+void Scene::camMove(char dir) {
+	MeshModel* model = (MeshModel*)models[activeModel];
+	Camera* cam = (Camera*)cameras[activeCamera];
+	mat4 temp = model->_world_transform;
+	switch (dir) {
+	case 'l':
+		cam->eye.x -= step_cam;
+		printf("l:%f\n", cam->eye.x);
+		break;
+	case 'r':
+		cam->eye.x += step_cam;
+		printf("r:%f\n", cam->eye.x);
+		break;
+	case 'u':
+		cam->eye.y += step_cam;
+		printf("u:%f\n", cam->eye.y);
+		break;
+	case 'd':
+		cam->eye.y -= step_cam;
+		printf("d:%f\n", cam->eye.y);
+		break;
+	case 'c':
+		cam->eye.z -= step_cam;
+		printf("c:%f\n", cam->eye.z);
+		break;
+	case 'f':
+		cam->eye.z += step_cam;
+		printf("f:%f\n", cam->eye.z);
+		break;
+
+	}
+
+	cam->LookAt(cam->eye, cam->at, cam->up);
 }
 
 void Scene::focus() {
@@ -325,12 +357,9 @@ void Scene::ortho(const float left, const float right, const float bottom, const
 }
 
 
-void Scene::modelFrame() {
-
-}
-
-void Scene::worldFrame() {
-
+void Scene::modelFrame(char frame) {
+	MeshModel* model = (MeshModel*)models[activeModel];
+	model->frame = frame;
 }
 
 /*--------------------------------------------------------------------*/

@@ -17,15 +17,15 @@ public:
 	bool bbox = false;
 	bool show_normalsV = false;
 	bool show_normalsF = false;
+	char frame = 'm';
 
 	mat4 _world_transform;
 	mat4 _normal_transform;
+	mat4 _normal_world_transform;
 	
 	mat4 m_transform;
 	mat4 m_translate;
 	mat4 m_rotate;
-	mat4 transform;
-	mat4 projection;
 
 	GLfloat min_x;
 	GLfloat min_y;
@@ -33,6 +33,8 @@ public:
 	GLfloat max_z;
 	GLfloat max_x;
 	GLfloat max_y;
+
+
 
 	MeshModel(string fileName);
 	~MeshModel(void);

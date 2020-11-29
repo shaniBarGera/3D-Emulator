@@ -61,6 +61,7 @@ public:
 	GLfloat step_move;
 	GLfloat step_scale;
 	GLfloat step_rotate;
+	GLfloat step_cam;
 
 	
 	Scene();
@@ -76,20 +77,17 @@ public:
 	
 	void showNormalsV();
 	void showNormalsF();
-	void removeNormalsV();
-	void removeNormalsF();
 	void addPrim();
 	void addCam(string s, vec3 eye, vec3 at, vec3 up);
 	void render();
-	void unrender();
 	void rotate(char cord);
 	void zoomIn();
 	void zoomOut();
 	void bbox();
-	void unbbox();
 	void focus();
 	void scale(char dir);
 	void move(int dx, int dy);
-	void modelFrame();
-	void worldFrame();
+	void modelFrame(char frame);
+	void camMove(char dir);
+	void camFrame(char frame);
 };
