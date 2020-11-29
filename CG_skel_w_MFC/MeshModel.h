@@ -9,6 +9,7 @@ using namespace std;
 class MeshModel : public Model
 {
 protected :
+	char a;
 	MeshModel() {}
 	bool normal = false;
 	
