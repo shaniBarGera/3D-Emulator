@@ -61,11 +61,14 @@ void Scene::draw()
 		 m_renderer->SetCameraMatrices(cam->cTransform, cam->projection);
 		 m_renderer->SetObjectMatrices(model->m_translate, model->m_transform, model->_world_transform, model->_normal_transform, model->_normal_world_transform);
 		 m_renderer->SetFlags(model->bbox, model->show_normalsV, model->show_normalsF);
-		 m_renderer->DrawTriangles(&eyes, &model->vertex_positions, &model->vertex_normal);
+		 m_renderer->DrawTriangles(&eyes, &model->vertex_positions, model->color, &model->vertex_normal);
+		 if (i == 0) model->color = 'r';
+		 else if (i == 1) model->color = 'p';
 	}
 	if (models.size() > 0) {
 		m_renderer->SwapBuffers();
 		m_renderer->ClearColorBuffer();
+		m_renderer->ClearDepthBuffer();
 	}
 }
 
@@ -362,6 +365,7 @@ void Scene::modelFrame(char frame) {
 	model->frame = frame;
 }
 
+
 /*--------------------------------------------------------------------*/
 /*                              CAMERA                                */
 /*--------------------------------------------------------------------*/
@@ -441,3 +445,4 @@ void Camera::Frustum(const float left, const float right,
 	vec4 d = vec4(0.0, 0.0, -1.0, 0.0);
 	projection = mat4(a, b, c, d);
 }
+

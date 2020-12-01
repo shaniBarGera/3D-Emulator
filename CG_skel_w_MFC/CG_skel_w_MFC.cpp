@@ -35,6 +35,7 @@
 #define MAIN_DEMO 1
 #define MAIN_ABOUT 2
 #define MAIN_PRIM 3
+#define MAIN_COLOR 4
 
 #define MODEL_ACTIVE 1
 
@@ -267,6 +268,9 @@ void mainMenu(int id)
 	case MAIN_PRIM:
 		scene->addPrim();
 		break;
+	case MAIN_COLOR:
+
+		break;
 	}
 }
 
@@ -440,7 +444,7 @@ void initMenu()
 	glutAddSubMenu("Set Step Size", stepFile);
 	glutAddMenuEntry("Demo", MAIN_DEMO);
 	glutAddMenuEntry("About", MAIN_ABOUT);
-	
+	glutAddMenuEntry("color", MAIN_COLOR);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
 //----------------------------------------------------------------------------

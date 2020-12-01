@@ -9,7 +9,6 @@ using namespace std;
 class MeshModel : public Model
 {
 protected :
-	char a;
 	MeshModel() {}
 	bool normal = false;
 	
@@ -19,7 +18,7 @@ public:
 	bool show_normalsV = false;
 	bool show_normalsF = false;
 	char frame = 'm';
-
+	char color = 'w';
 	mat4 _world_transform;
 	mat4 _normal_transform;
 	mat4 _normal_world_transform;
