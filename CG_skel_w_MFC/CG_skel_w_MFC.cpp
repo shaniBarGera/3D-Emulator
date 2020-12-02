@@ -35,9 +35,10 @@
 #define MAIN_DEMO 1
 #define MAIN_ABOUT 2
 #define MAIN_PRIM 3
-#define MAIN_COLOR 4
 
 #define MODEL_ACTIVE 1
+#define MODEL_COLOR 2
+
 
 #define FRAME_WORLD 1
 #define FRAME_MODEL 2
@@ -66,6 +67,7 @@ bool lb_down, rb_down, mb_down;
 // Helpers
 
 string dialogBox(CString s) {
+	printf("dialog box\n");
 	CCmdDialog dlg(s);
 	if (dlg.DoModal() == IDOK) {
 		return dlg.GetCmd();
@@ -268,9 +270,6 @@ void mainMenu(int id)
 	case MAIN_PRIM:
 		scene->addPrim();
 		break;
-	case MAIN_COLOR:
-
-		break;
 	}
 }
 
@@ -315,6 +314,7 @@ void normalMenu(int id) {
 
 void modelMenu(int id) {
 	int curr_model;
+	string color;
 	switch (id)
 	{
 	case MODEL_ACTIVE:
@@ -325,6 +325,11 @@ void modelMenu(int id) {
 		}
 		scene->activeCamera = curr_model;
 		scene->activeModel = curr_model;
+		break;
+	case MODEL_COLOR:
+		printf("color\n");
+		color = dialogBox("Color");
+		scene->color(color);
 		break;
 	}
 }
@@ -428,6 +433,7 @@ void initMenu()
 
 	int modelFile = glutCreateMenu(modelMenu);
 	glutAddMenuEntry("Set Active", MODEL_ACTIVE);
+	glutAddMenuEntry("Color", MODEL_COLOR);
 	glutAddSubMenu("Normals", normalFile);
 	glutAddSubMenu("Frame", frameFile);
 
@@ -444,7 +450,6 @@ void initMenu()
 	glutAddSubMenu("Set Step Size", stepFile);
 	glutAddMenuEntry("Demo", MAIN_DEMO);
 	glutAddMenuEntry("About", MAIN_ABOUT);
-	glutAddMenuEntry("color", MAIN_COLOR);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
 //----------------------------------------------------------------------------
