@@ -62,14 +62,18 @@ void Scene::draw()
 		 m_renderer->SetObjectMatrices(model->m_translate, model->m_transform, model->_world_transform, model->_normal_transform, model->_normal_world_transform);
 		 m_renderer->SetFlags(model->bbox, model->show_normalsV, model->show_normalsF);
 		 m_renderer->DrawTriangles(&eyes, &model->vertex_positions, model->color, &model->vertex_normal);
-		 if (i == 0) model->color = 'r';
-		 else if (i == 1) model->color = 'p';
 	}
 	if (models.size() > 0) {
 		m_renderer->SwapBuffers();
 		m_renderer->ClearColorBuffer();
 		m_renderer->ClearDepthBuffer();
 	}
+}
+
+void Scene::color(string color) {
+	char c = color[0];
+	MeshModel* model = (MeshModel*)models[activeModel];
+	model->color = c;
 }
 
 void Scene::drawDemo()

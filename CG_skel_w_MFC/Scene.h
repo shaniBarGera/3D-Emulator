@@ -62,7 +62,6 @@ public:
 	GLfloat step_scale;
 	GLfloat step_rotate;
 	GLfloat step_cam;
-	char color;
 	
 	Scene();
 	Scene(Renderer* renderer);
@@ -90,5 +89,5 @@ public:
 	void modelFrame(char frame);
 	void camMove(char dir);
 	void camFrame(char frame);
-	void set_color(char color);
+	void color(string color);
 };

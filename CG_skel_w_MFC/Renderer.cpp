@@ -34,6 +34,7 @@ void Renderer::CreateBuffers(int width, int height)
 	CreateOpenGLBuffer(); //Do not remove this line.
 	m_outBuffer = new float[3*m_width*m_height];
 	m_zbuffer = new GLfloat[m_width * m_height];
+	curr_poly = new vector<vector<int>>(m_width);
 }
 
 void Renderer::SetDemoBuffer()
@@ -61,37 +62,25 @@ bool Renderer::setPixelOn(int x, int y, char color) {
 	if (x < 0 || x >= m_width || y < 0 || y >= m_width) { 
 		return false; 
 	}
-	string code = get_color(color);
-	m_outBuffer[INDEX(m_width - 1, x, y, 0)] = code[0] - '0';
-	m_outBuffer[INDEX(m_width - 1, x, y, 1)] = code[1] - '0';
-	m_outBuffer[INDEX(m_width - 1, x, y, 2)] = code[2] - '0';
-	return true;
-}
-
-string Renderer::get_color(char color) {
+	int r = 0, g = 0, b = 0;
 	switch (color) {
 	case 'r':
-		return "100";
+		r = 1; g = 0; b = 0; break;
 	case 'g':
-		return "010";
+		r = 0; g = 1; b = 0; break;
 	case 'b':
-		return "001";
+		r = 0; g = 0; b = 1; break;
 	case 'p':
-		return "101";
+		r = 1; g = 0; b = 1; break;
 	case 't':
-		return "011";
+		r = 0; g = 1; b = 1; break;
 	case 'w':
-		return "111";
+		r = 1; g = 1; b = 1; break;
 	}
-	return "000";
-}
-
-bool Renderer::pixel_is_on(int x, int y, char color) {
-	//printf("PIXEL IS ON\n");
-	string code = get_color(color);
-	return (m_outBuffer[INDEX(m_width - 1, x, y, 0)] == code[0] - '0' &&
-		m_outBuffer[INDEX(m_width - 1, x, y, 1)] == code[1] - '0' &&
-		m_outBuffer[INDEX(m_width - 1, x, y, 2)] == code[2] - '0');
+	m_outBuffer[INDEX(m_width - 1, x, y, 0)] = r;
+	m_outBuffer[INDEX(m_width - 1, x, y, 1)] = g;
+	m_outBuffer[INDEX(m_width - 1, x, y, 2)] = b;
+	return true;
 }
 
 int Sign(int dxy)
@@ -101,7 +90,7 @@ int Sign(int dxy)
 	else return 0;
 }
 
-void Renderer::Drawline(int x1, int x2, int y1, int y2, char color, vector<vector<int>>* curr_poly) {
+void Renderer::Drawline(int x1, int x2, int y1, int y2, char color, bool save_poly) {
 	//printf("draw line %d %d %d %d\n", x1, x2, y1, y2);
 	int Dx = x2 - x1;
 	int Dy = y2 - y1;
@@ -125,8 +114,8 @@ void Renderer::Drawline(int x1, int x2, int y1, int y2, char color, vector<vecto
 		//# Main loop
 		for (int I = 0; I < D; I++)
 		{
-			bool ans = setPixelOn(X, Y, color);
-			if (curr_poly && X >= 0 && X < m_width) {
+			//bool ans = setPixelOn(X, Y, color);
+			if (save_poly && X >= 0 && X < m_width) {
 				(*curr_poly)[X].push_back(Y);
 			}
 		
@@ -145,8 +134,8 @@ void Renderer::Drawline(int x1, int x2, int y1, int y2, char color, vector<vecto
 		for (int I = 0; I < D; I++)
 		{
 			
-			bool ans = setPixelOn(X, Y, color);
-			if (curr_poly && X >= 0 && X < m_width) {
+			//bool ans = setPixelOn(X, Y, color);
+			if (save_poly && X >= 0 && X < m_width) {
 				(*curr_poly)[X].push_back(Y);
 			}
 
@@ -162,60 +151,50 @@ void Renderer::Drawline(int x1, int x2, int y1, int y2, char color, vector<vecto
 	}
 }
 
-void Renderer::put_z(int x, int y, GLfloat z) {
-	m_zbuffer[INDEXZ(m_width, x, y)] = z;
-}
-
-GLfloat Renderer::get_z(int x, int y) {
-	return m_zbuffer[INDEXZ(m_width, x, y)];
-}
-
 GLfloat Area(vec2 p1, vec2 p2, vec2 p3) {
-	vec2 a = vec2(p1[0] - p2[0], p1[1] - p2[1]);
-	vec2 b = vec2(p3[0] - p2[0], p3[1] - p2[1]);
+	vec2 a = vec2(p1.x - p2.x, p1.y - p2.y);
+	vec2 b = vec2(p3.x - p2.x, p3.y - p2.y);
 	vec2 res = a * b;
-	return sqrt(res[0] * res[0] + res[1] * res[1]);
+	return sqrt(res.x * res.x + res.y * res.y);
 }
 
-GLfloat depth(int x, int y, vec3 posiotion_x, vec3 posiotion_y, vec3 posiotion_z) {
-	vec2 a = vec2(x, y); vec2 b = vec2(posiotion_x[0], posiotion_y[0]);
-	vec2 c = vec2(posiotion_x[1], posiotion_y[1]); vec2 d = vec2(posiotion_x[2], posiotion_y[2]);
-	GLfloat a1 = Area(a,b,c);
+GLfloat depth(int x, int y, vec3 p1, vec3 p2, vec3 p3){
+	//vec3 posiotion_x, vec3 posiotion_y, vec3 posiotion_z) {
+	vec2 a = vec2(x, y); 
+	vec2 b = vec2(p1.x, p1.y);
+	vec2 c = vec2(p2.x, p2.y); 
+	vec2 d = vec2(p3.x, p3.y);
+	GLfloat a1 = Area(a, b, c);
 	GLfloat a2 = Area(a, b, d);
 	GLfloat a3 = Area(a, c, d);
 	GLfloat sum_a = a1 + a2 + a3;
-	return (a1 / sum_a) * posiotion_z[0] + (a2 / sum_a) * posiotion_z[1] + (a3 / sum_a) * posiotion_z[2];
+	return (a1 / sum_a) * p1.z + (a2 / sum_a) * p2.z + (a3 / sum_a) * p3.z;
 }
 
-void Renderer::FillPolygon(int min_x, int max_x, char color, vector<vector<int>>* curr_poly,
-	vec3 posiotion_x, vec3 posiotion_y, vec3 posiotion_z){
+void Renderer::FillPolygon( char color, vec3 p1, vec3 p2, vec3 p3){
+	//vec3 posiotion_x, vec3 posiotion_y, vec3 posiotion_z){
 	//printf("FILL POLY\n");
-	if (!curr_poly) return;
+	int min_x = max(min(min(p1.x, p2.x), p3.x), 0);
+	int max_x = min(max(max(p1.x, p2.x), p3.x), m_height - 1);
 
-	for (int x = 0; x < m_width; ++x) {
-		if ((*curr_poly)[x].size() <= 1) continue;
-		int max_y = min(*max_element((*curr_poly)[x].begin(), (*curr_poly)[x].end()), m_height);
+	for (int x = min_x; x <= max_x; ++x) {
+		if ((*curr_poly)[x].size() <= 0){
+			continue;
+		}
+
+		int max_y = min(*max_element((*curr_poly)[x].begin(), (*curr_poly)[x].end()), m_height-1);
 		int min_y = max(*min_element((*curr_poly)[x].begin(), (*curr_poly)[x].end()), 0);
 
-		for (int y = min_y; y < max_y; ++y) {
-			GLfloat z = depth(x, y, posiotion_x, posiotion_y, posiotion_z);
-			if (z < get_z(x, y)) {
+		for (int y = min_y; y <= max_y; ++y) {
+			GLfloat z = depth(x, y, p1, p2, p3);
+			if (z < m_zbuffer[INDEXZ(m_width, x, y)]) {
 				setPixelOn(x, y, color);
-				put_z(x, y, z);
+				m_zbuffer[INDEXZ(m_width, x, y)] = z;
 			}
-			
 		}
+		(*curr_poly)[x].clear();
 	}
-
-
 }
-
-bool Renderer::OnBoundary(int x, int y, vector<vector<int>>* curr_poly) {
-	//printf("ON BOUNDARY\n");
-
-	return (*curr_poly)[x][y];
-}
-
 
 void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertices, char color,const vector<vec3>* normals) {
 	printf("DRAW TRIANGLE\n");
@@ -263,20 +242,12 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 			}
 		}
 		
-		//char color = 'p';
-
-		vector<vector<int>> curr_poly(m_width);
 
 		Drawline(p[0].x, p[1].x, p[0].y, p[1].y, color, &curr_poly);
 		Drawline(p[2].x, p[1].x, p[2].y, p[1].y, color, &curr_poly);
 		Drawline(p[0].x, p[2].x, p[0].y, p[2].y, color, &curr_poly);
-		vec3 position_x = vec3(p[0].x, p[1].x, p[2].x);
-		vec3 position_y = vec3(p[0].y, p[1].y, p[2].y);
-		vec3 position_z = vec3(p[0].z, p[1].z, p[2].z);
-		int min_x = min(min(p[0].x, p[1].x), p[2].x);
-		int max_x = max(max(p[0].x, p[1].x), p[2].x);
 
-		FillPolygon(min_x, max_x, color, &curr_poly,position_x, position_y, position_z);
+		FillPolygon(color, p[0], p[1], p[2]);
 
 		vec4 v1 = (*vertices)[i];
 		vec4 v2 = (*vertices)[i + 1];
@@ -310,8 +281,6 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 
 		}
 
-		//char color = 'r';
-
 		Drawline(x[0], x[1], y[0], y[1], color);
 		Drawline(x[2], x[1], y[2], y[1], color);
 		Drawline(x[0], x[2], y[0], y[2], color);
@@ -322,6 +291,7 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 void Renderer::ClearColorBuffer() {
 	//clean bufer
 	for (int i = 0; i < m_width; i++) {
+		(*curr_poly)[i].clear();
 		for (int j = 0; j < m_height; j++) {
 			m_outBuffer[INDEX(m_width, i, j, 0)] = 0;
 			m_outBuffer[INDEX(m_width, i, j, 1)] = 0;

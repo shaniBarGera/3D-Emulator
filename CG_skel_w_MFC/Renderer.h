@@ -10,6 +10,7 @@ class Renderer
 {
 	float *m_outBuffer; // 3*width*height
 	float *m_zbuffer; // width*height
+	vector<vector<int>>* curr_poly;
 
 	mat4 CTransform;
 	mat4 MTransform;
@@ -44,7 +45,7 @@ public:
 	~Renderer(void);
 	void Init();
 	void DrawTriangles(const vector<vec3>* eyes, const vector<vec3>* vertices,char color, const vector<vec3>* normals = NULL);
-	void Drawline(int x1, int x2, int y1, int y2, char color, vector<vector<int>>* curr_poly = nullptr);
+	void Drawline(int x1, int x2, int y1, int y2, char color, bool save_poly = true);
 	void SetCameraMatrices(const mat4& cTransform, const mat4& projection);
 	void SetScreenTransform(GLfloat min_x, GLfloat min_y, GLfloat max_x, GLfloat max_y);
 	void SetObjectMatrices(const mat4& mTranslate, const mat4& mTransform, const mat4& wTransform, const mat4& nTransform, const mat4& nwTransform);
@@ -58,9 +59,7 @@ public:
 	bool pixel_is_on(int x, int y, char color);
 	void SetFlags(bool bbox, bool show_normalsV, bool show_normalsF);
 	//void FillPolygon(vec3 p1, vec3 p2, vec3 p3, char color, vector<vector<int>>* curr_poly);
-	void FillPolygon(int min_x, int max_x, char color, vector<vector<int>>* curr_poly, 
-		vec3 posiotion_x, vec3 posiotion_y, vec3 posiotion_z);
-	bool OnBoundary(int x, int y, vector<vector<int>>* curr_poly);
+	void FillPolygon(char color, vec3 p1, vec3 p2, vec3 p3);
 	void put_z(int x, int y, GLfloat Z);
 	GLfloat get_z(int x, int y);
 };
