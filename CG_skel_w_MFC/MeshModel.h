@@ -13,7 +13,7 @@ protected :
 	MeshModel() {}
 	bool normal = false;
 	void _add_line(vec3 v1, vec3 v2);
-	
+	GLfloat k = 1;
 	
 public:
 	bool bbox = false;
@@ -29,7 +29,7 @@ public:
 	mat4 m_translate;
 	mat4 m_rotate;
 
-	GLfloat k; // surface coefficient
+	vec4 fraction = vec4(0.5,0.2,0.4,5); // surface coefficient. Ka, Kd, Ks, alpha
 
 	GLfloat min_x;
 	GLfloat min_y;

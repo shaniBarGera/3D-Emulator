@@ -8,13 +8,11 @@ using namespace std;
 
 
 //-------------------------------------CTRS--------------------------------------------//
-Light::Light(): place(0, 0, 3), color(1,1,1) {}
-
 Scene::Scene() {
 	activeCamera = 0;
 	Camera* cam = new Camera();
-	Light* light = new Light();
 	cameras.push_back(cam);
+	Light* light = new Light();
 	lights.push_back(light);
 	activeModel = -1;
 	step_move = 0.01;
@@ -24,12 +22,12 @@ Scene::Scene() {
 }
 
 Scene::Scene(Renderer* renderer) {
-	Light* light = new Light();
-	lights.push_back(light);
 	m_renderer = renderer;
 	activeCamera = 0;
 	Camera* cam = new Camera();
 	cameras.push_back(cam);
+	Light* light = new Light();
+	lights.push_back(light);
 	activeModel = -1;
 	step_move = 0.01;
 	step_rotate = 10;
@@ -61,13 +59,15 @@ void Scene::draw()
 	// 1. Send the renderer the current camera transform and the projection
 	// 2. Tell all models to draw themselves
 	Camera* cam = cameras[activeCamera];
+	m_renderer->lights = lights;
 	for (size_t i = 0; i < models.size(); ++i) {
 		 MeshModel* model = (MeshModel*)models[i];
+		
 		 m_renderer->SetScreenTransform(model->min_x, model->min_y, model->max_x, model->max_y);
 		 m_renderer->SetCameraMatrices(cam->cTransform, cam->projection);
 		 m_renderer->SetObjectMatrices(model->m_translate, model->m_transform, model->_world_transform, model->_normal_transform, model->_normal_world_transform);
 		 m_renderer->SetFlags(model->bbox, model->show_normalsV, model->show_normalsF);
-		 m_renderer->DrawTriangles(&eyes, &model->vertex_positions, model->color, &model->vertex_normal, &model->vertex_bbox);
+		 m_renderer->DrawTriangles(&eyes, &model->vertex_positions, model->color, &model->vertex_normal, &model->vertex_bbox, model->fraction, cam->eye);
 	}
 	if (models.size() > 0) {
 		m_renderer->SwapBuffers();
@@ -455,7 +455,7 @@ void Scene::setLightType(string type) {
 	printf("SET LIGHT TYPE\n");
 }
 
-void Scene::shade(string type){
+void Scene::shade(string type) {
 	printf("SHADE\n");
 }
 

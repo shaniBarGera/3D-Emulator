@@ -1,4 +1,4 @@
- // CG_skel_w_MFC.cpp : Defines the entry point for the console application.
+// CG_skel_w_MFC.cpp : Defines the entry point for the console application.
 //
 
 #include "stdafx.h"
@@ -94,7 +94,7 @@ string dialogBox(CString s) {
 	return "";
 }
 
-vec3 dialogBoxVec(CString s){
+vec3 dialogBoxVec(CString s) {
 	CCmdXyzDialog dlg(s);
 	vec3 v;
 	if (dlg.DoModal() == IDOK)
@@ -152,7 +152,7 @@ void keyboard(unsigned char key, int x, int y)
 	case 'o':
 		scene->zoomOut();
 		break;
-	
+
 	case 'x':
 		scene->rotate('x');
 		break;
@@ -199,7 +199,7 @@ void keyboard(unsigned char key, int x, int y)
 		scene->bloom();
 		break;
 	}
-	
+
 	glutPostRedisplay();
 }
 
@@ -454,7 +454,7 @@ void lightMenu(int id) {
 		break;
 	case LIGHT_ACTIVE:
 		curr_light = stoi(dialogBox("Active Light Number"));
-		while (curr_light < 0 || curr_light >= scene->lights.size()){
+		while (curr_light < 0 || curr_light >= scene->lights.size()) {
 			AfxMessageBox(_T("Out of range"));
 			curr_light = stoi(dialogBox("Active Light Number"));
 		}
@@ -503,7 +503,7 @@ void projMenu(int id) {
 		scene->perspective(fovy, aspect, zNear, zFar);
 		break;
 	}
-	
+
 }
 
 void initMenu()
@@ -576,7 +576,7 @@ void initMenu()
 	glutAddSubMenu("File", menuFile);
 	glutAddMenuEntry("Add Primitve", MAIN_PRIM);
 	glutAddSubMenu("Model", modelFile);
-	glutAddSubMenu("Camera", camFile);	
+	glutAddSubMenu("Camera", camFile);
 	glutAddSubMenu("Light", lightFile);
 	glutAddSubMenu("Set Step Size", stepFile);
 	glutAddMenuEntry("Demo", MAIN_DEMO);

@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+﻿#include "StdAfx.h"
 #include "Renderer.h"
 #include "CG_skel_w_MFC.h"
 #include "InitShader.h"
@@ -75,17 +75,40 @@ GLfloat depth(int x, int y, vec3 p1, vec3 p2, vec3 p3) {
 	return (a1 / sum_a) * p1.z + (a2 / sum_a) * p2.z + (a3 / sum_a) * p3.z;
 }
 
-bool Renderer::setPixelOn(int x, int y, vec3 p1, vec3 p2, vec3 p3, vec3 color) {
+bool Renderer::setPixelOn(int x, int y, vec3 p1, vec3 p2, vec3 p3, vec3 color, vec3 normal, vec4 fraction,vec3 eye) {
 	//printf("SET PIXEL ON %d %d\n", x, y);
 	if (x < 0 || x >= m_width || y < 0 || y >= m_width) { 
 		return false; 
 	}
 	GLfloat z = depth(x, y, p1, p2, p3);
+
 	if (z >= m_zbuffer[INDEXZ(m_width, x, y)]) {
 		return false;
 	}
-	m_zbuffer[INDEXZ(m_width, x, y)] = z;
+	//cout << "here1";
+	for (int i = 0; i < lights.size();i++) {
+		
+		vec3 pos_light = lights[i]->place;
+		vec3 l = vec3(x - pos_light.x, y - pos_light.y, z - pos_light.z);
+		l = normalize(l);
+		normal = normalize(normal);
+		GLfloat Ia = lights[i]->intensity[0]* fraction[0]; //Ka
+		GLfloat Id = lights[i]->intensity[1] * dot(l, normal)* fraction[1]; //Kd
+		vec3 v = vec3(x - eye.x, y - eye.y, z - eye.z);
+		v = normalize(v);
+		vec3 r = l - 2 * dot(l, normal) * normal;
+		r = normalize(r);
+		GLfloat Is = lights[i]->intensity[2] * fraction[2]* powf(dot(v,r), fraction[3]);
+		color *= (Ia + Id + Is);
+		//cout << Ia << Id << Is;
+	}
 	
+	
+	
+	
+	
+	m_zbuffer[INDEXZ(m_width, x, y)] = z;
+	//color *= 0.5*factor;
 	m_outBuffer[INDEX(m_width - 1, x, y, 0)] = color.x;
 	m_outBuffer[INDEX(m_width - 1, x, y, 1)] = color.y;
 	m_outBuffer[INDEX(m_width - 1, x, y, 2)] = color.z;
@@ -124,7 +147,7 @@ void Renderer::Drawline(vec3 p1, vec3 p2, vec3 color, bool save_poly) {
 		//# Main loop
 		for (int I = 0; I < D; I++)
 		{
-			setPixelOn(X, Y, p1, p2, p2, color);
+			//setPixelOn(X, Y, p1, p2, p2, color);
 			if (save_poly && X >= 0 && X < m_width) {
 				(*curr_poly)[X].push_back(Y);
 			}
@@ -143,7 +166,7 @@ void Renderer::Drawline(vec3 p1, vec3 p2, vec3 color, bool save_poly) {
 		//# Main loop
 		for (int I = 0; I < D; I++)
 		{
-			setPixelOn(X, Y, p1, p2, p2, color);
+			//setPixelOn(X, Y, p1, p2, p2, color);
 			if (save_poly && X >= 0 && X < m_width) {
 				(*curr_poly)[X].push_back(Y);
 			}
@@ -161,7 +184,7 @@ void Renderer::Drawline(vec3 p1, vec3 p2, vec3 color, bool save_poly) {
 }
 
 
-void Renderer::FillPolygon(vec3 color, vec3 p1, vec3 p2, vec3 p3){
+void Renderer::FillPolygon(vec3 color, vec3 p1, vec3 p2, vec3 p3, vec3 normal, vec4 fraction, vec3 eye){
 	//vec3 posiotion_x, vec3 posiotion_y, vec3 posiotion_z){
 	//printf("FILL POLY\n");
 	Drawline(p1, p2, color, true);
@@ -180,13 +203,13 @@ void Renderer::FillPolygon(vec3 color, vec3 p1, vec3 p2, vec3 p3){
 		int min_y = max(*min_element((*curr_poly)[x].begin(), (*curr_poly)[x].end()), 0);
 
 		for (int y = min_y; y <= max_y; ++y) {
-			setPixelOn(x, y, p1, p2, p3, color);
+			setPixelOn(x, y, p1, p2, p3, color, normal, fraction,eye);
 		}
 		(*curr_poly)[x].clear();
 	}
 }
 
-void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertices, vec3 color,const vector<vec3>* normals, const vector<vec3>* vertices_bbox) {
+void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertices, vec3 color,const vector<vec3>* normals, const vector<vec3>* vertices_bbox, vec4 fraction, vec3 pos_camera) {
 	printf("DRAW TRIANGLE\n");
 	
 	// add cam renderer
@@ -234,7 +257,7 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 		}
 
 		//curr_color = ((i / 3) % 2 == 0) ? 'r' : 'w';
-		FillPolygon(color, p[0], p[1], p[2]);
+		
 
 
 		// draw normals
@@ -246,7 +269,7 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 		f_normal = STransform * Projection * CTransform * f_normal;
 		vec3 n = vec4t3(f_normal);
 		vec3 c = vec4t3(center);
-
+		FillPolygon(color, p[0], p[1], p[2],n, fraction, pos_camera);
 		if (show_normalsF) {
 			Drawline(c, n, vec3(0,1,1));
 		}
