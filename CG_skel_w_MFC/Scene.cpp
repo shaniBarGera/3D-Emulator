@@ -8,10 +8,14 @@ using namespace std;
 
 
 //-------------------------------------CTRS--------------------------------------------//
+Light::Light(): place(0, 0, 3), color(1,1,1) {}
+
 Scene::Scene() {
 	activeCamera = 0;
 	Camera* cam = new Camera();
+	Light* light = new Light();
 	cameras.push_back(cam);
+	lights.push_back(light);
 	activeModel = -1;
 	step_move = 0.01;
 	step_rotate = 10;
@@ -20,6 +24,8 @@ Scene::Scene() {
 }
 
 Scene::Scene(Renderer* renderer) {
+	Light* light = new Light();
+	lights.push_back(light);
 	m_renderer = renderer;
 	activeCamera = 0;
 	Camera* cam = new Camera();
@@ -70,9 +76,9 @@ void Scene::draw()
 	}
 }
 
-void Scene::color(vec3 color) {
+void Scene::color(vec3 color1, bool uni) {
 	MeshModel* model = (MeshModel*)models[activeModel];
-	model->color = color;
+	model->color = color1;
 }
 
 void Scene::drawDemo()
@@ -410,3 +416,53 @@ void Camera::Frustum(const float left, const float right,
 	projection = mat4(a, b, c, d);
 }
 
+/*--------------------------------------------------------------------*/
+/*                              LIGHT                                 */
+/*--------------------------------------------------------------------*/
+
+void Scene::setSurface(GLfloat emissive, GLfloat diffuse, GLfloat specular, GLfloat alpha) {
+	// set active model surface coefficient
+	printf("SET SURFACE\n");
+}
+
+void Scene::addLight() {
+	// add new light
+	printf("ADD LIGHT\n");
+}
+
+void Scene::deactivateLight() {
+	// deactivate current light
+	printf("DEACTIVATE LIGHT\n");
+}
+
+void Scene::colorLight(vec3 color) {
+	// color active light
+	printf("COLOR LIGHT\n");
+}
+
+void Scene::positionLight(vec3 position) {
+	// position active light
+	printf("POSITION LIGHT\n");
+}
+
+void Scene::orientLight() {
+	// orient active light
+	printf("ORIENT LIGHT\n");
+}
+
+void Scene::setLightType(string type) {
+	// set light typeb (parallel/point/ambient)
+	printf("SET LIGHT TYPE\n");
+}
+
+void Scene::shade(string type){
+	printf("SHADE\n");
+}
+
+void Scene::dimm() {
+	printf("DIMM\n");
+}
+
+void Scene::bloom() {
+	printf("BLOOM\n");
+}

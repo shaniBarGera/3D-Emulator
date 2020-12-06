@@ -16,8 +16,10 @@ protected:
 class Light {
 	vec3 place;
 	vec3 color;
-	GLfloat intensity;
+	GLfloat intensity = 1;
+	GLfloat coefficient = 1;
 	bool point = false; // default is parallel
+public:
 	Light();
 
 };
@@ -51,11 +53,12 @@ public:
 class Scene {
 
 	
-	vector<Light*> lights;
+	
 	
 	Renderer *m_renderer;
 
 public:
+	vector<Light*> lights;
 	vector<Model*> models;
 	vector<Camera*> cameras;
 	int activeModel;
@@ -80,17 +83,29 @@ public:
 	void showNormalsV();
 	void showNormalsF();
 	void addPrim();
-	void addCam(string s, vec3 eye, vec3 at, vec3 up);
-	void render();
 	void rotate(char cord);
-	void zoomIn();
-	void zoomOut();
 	void bbox();
-	void focus();
 	void scale(char dir);
 	void move(int dx, int dy);
 	void modelFrame(char frame);
+	void color(vec3 color1, bool uni = true);
+
+	void addCam(string s, vec3 eye, vec3 at, vec3 up);
+	void render();
+	void zoomIn();
+	void zoomOut();
+	void focus();
 	void camMove(char dir);
 	void camFrame(char frame);
-	void color(vec3 color);
+
+	void setSurface(GLfloat emissive, GLfloat diffuse, GLfloat specular, GLfloat alpha);
+	void addLight();
+	void deactivateLight();
+	void colorLight(vec3 color);
+	void positionLight(vec3 position);
+	void orientLight();
+	void setLightType(string type);
+	void shade(string type);
+	void dimm();
+	void bloom();
 };

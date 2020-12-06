@@ -39,7 +39,7 @@
 #define MODEL_ACTIVE 1
 #define MODEL_COLOR 2
 #define MODEL_BBOX 3
-
+#define MODEL_SURFACE 4
 
 #define FRAME_WORLD 1
 #define FRAME_MODEL 2
@@ -57,6 +57,24 @@
 
 #define CAM_FRAME_VIEW 1
 #define CAM_FRAME_WORLD 2
+
+#define COLOR_UNI 1
+#define COLOR_XUNI 2
+
+#define LIGHT_POINT 1
+#define LIGHT_PAR 2
+#define LIGHT_AMB 3
+
+#define SHADE_FLAT 1
+#define SHADE_GOUR 2
+#define SHADE_PHONG 3
+
+#define LIGHT_ADD 1
+#define LIGHT_ACTIVE 2
+#define LIGHT_COLOR 3
+#define LIGHT_POSITION 4
+#define LIGHT_ORIENT 5
+#define LIGHT_CLEAR 6
 
 Scene* scene;
 Renderer* renderer;
@@ -167,14 +185,21 @@ void keyboard(unsigned char key, int x, int y)
 	case 'd':  // camera right
 		scene->camMove('r');
 		break;
-	case 'A':
+	case 'A': // camera close
 		scene->camMove('c');
 		break;
-	case 'D':
+	case 'D': // camera far
 		scene->camMove('f');
 		break;
+
+	case '[':
+		scene->dimm();
+		break;
+	case ']':
+		scene->bloom();
+		break;
 	}
-	printf("REDISPLAY\n");
+	
 	glutPostRedisplay();
 }
 
@@ -316,6 +341,7 @@ void normalMenu(int id) {
 void modelMenu(int id) {
 	int curr_model;
 	vec3 color;
+	GLfloat emissive, diffuse, specular, alpha;
 	switch (id)
 	{
 	case MODEL_ACTIVE:
@@ -327,12 +353,15 @@ void modelMenu(int id) {
 		scene->activeCamera = curr_model;
 		scene->activeModel = curr_model;
 		break;
-	case MODEL_COLOR:
-		color = dialogBoxVec("Color");
-		scene->color(color);
-		break;
 	case MODEL_BBOX:
 		scene->bbox();
+		break;
+	case MODEL_SURFACE:
+		emissive = stof(dialogBox("Model Emissive Coefficient"));
+		diffuse = stof(dialogBox("Model Diffuse Coefficient"));
+		specular = stof(dialogBox("Model Specular Coefficient"));
+		alpha = stof(dialogBox("Alpha"));
+		scene->setSurface(emissive, diffuse, specular, alpha);
 		break;
 	}
 }
@@ -373,6 +402,78 @@ void camFrameMenu(int id) {
 	}
 }
 
+void colorMenu(int id) {
+	vec3 color = dialogBoxVec("Color");
+	switch (id) {
+	case COLOR_UNI:
+		scene->color(color);
+		break;
+	case COLOR_XUNI:
+		scene->color(color, false);
+		break;
+	}
+}
+
+void lightShadeMenu(int id) {
+	switch (id) {
+	case SHADE_FLAT:
+		scene->shade("flat");
+		break;
+	case SHADE_GOUR:
+		scene->shade("gour");
+		break;
+	case SHADE_PHONG:
+		scene->shade("phong");
+		break;
+	}
+}
+
+void lightTypeMenu(int id) {
+	switch (id) {
+	case LIGHT_POINT:
+		scene->setLightType("point");
+		break;
+	case LIGHT_PAR:
+		scene->setLightType("parallel");
+		break;
+	case LIGHT_AMB:
+		scene->setLightType("ambient");
+		break;
+	}
+}
+
+void lightMenu(int id) {
+	int curr_light;
+	vec3 ans;
+	switch (id) {
+	case LIGHT_ADD:
+		scene->addLight();
+		break;
+	case LIGHT_CLEAR:
+		scene->deactivateLight();
+		break;
+	case LIGHT_ACTIVE:
+		curr_light = stoi(dialogBox("Active Light Number"));
+		while (curr_light < 0 || curr_light >= scene->lights.size()){
+			AfxMessageBox(_T("Out of range"));
+			curr_light = stoi(dialogBox("Active Light Number"));
+		}
+		scene->activeLight = curr_light;
+		break;
+	case LIGHT_COLOR:
+		ans = dialogBoxVec("Set Light Color");
+		scene->colorLight(ans);
+		break;
+	case LIGHT_POSITION:
+		ans = dialogBoxVec("Set Light Position");
+		scene->positionLight(ans);
+		break;
+	case LIGHT_ORIENT:
+		scene->orientLight();
+		break;
+	}
+}
+
 void projMenu(int id) {
 	GLfloat left = 2, right = -2, bottom = 2, top = -2, zNear = 2, zFar = -2, fovy = 1, aspect = 2;
 	switch (id) {
@@ -407,41 +508,66 @@ void projMenu(int id) {
 
 void initMenu()
 {
-	int menuFile = glutCreateMenu(fileMenu);
+	const int menuFile = glutCreateMenu(fileMenu);
 	glutAddMenuEntry("Open..", FILE_OPEN);
 
-	int projFile = glutCreateMenu(projMenu);
+	const int projFile = glutCreateMenu(projMenu);
 	glutAddMenuEntry("Orthogonal", PROJ_ORT);
 	glutAddMenuEntry("Prespective", PROJ_PRES);
 	glutAddMenuEntry("Prespective by Aspect Ratio", PROJ_GEO);
 
-	int camFrameFile = glutCreateMenu(camFrameMenu);
+	const int camFrameFile = glutCreateMenu(camFrameMenu);
 	glutAddMenuEntry("View", CAM_FRAME_VIEW);
 	glutAddMenuEntry("World", CAM_FRAME_WORLD);
 
-	int camFile = glutCreateMenu(camMenu);
+	const int camFile = glutCreateMenu(camMenu);
 	glutAddMenuEntry("Add", CAM_ADD);
 	glutAddMenuEntry("Set Active", CAM_ACTIVE);
 	glutAddMenuEntry("Render", CAM_REND);
 	glutAddSubMenu("Projection", projFile);
 	glutAddSubMenu("Frame", camFrameFile);
 
-	int frameFile = glutCreateMenu(frameMenu);
+	const int frameFile = glutCreateMenu(frameMenu);
 	glutAddMenuEntry("Model", FRAME_MODEL);
 	glutAddMenuEntry("World", FRAME_WORLD);
 
-	int normalFile = glutCreateMenu(normalMenu);
+	const int normalFile = glutCreateMenu(normalMenu);
 	glutAddMenuEntry("Face", NORMAL_FACE);
 	glutAddMenuEntry("Vertex", NORMAL_VERTEX);
 
-	int modelFile = glutCreateMenu(modelMenu);
+	const int colorFile = glutCreateMenu(colorMenu);
+	glutAddMenuEntry("Uniform", COLOR_UNI);
+	glutAddMenuEntry("Non-Uniform", COLOR_XUNI);
+
+	const int modelFile = glutCreateMenu(modelMenu);
 	glutAddMenuEntry("Set Active", MODEL_ACTIVE);
-	glutAddMenuEntry("Color", MODEL_COLOR);
+	glutAddSubMenu("Color", colorFile);
 	glutAddSubMenu("Normals", normalFile);
 	glutAddSubMenu("Frame", frameFile);
-	glutAddMenuEntry("Add Bounding Box", MODEL_BBOX);
+	glutAddMenuEntry("Bounding Box", MODEL_BBOX);
+	glutAddMenuEntry("Surface Coefficient", MODEL_SURFACE);
 
-	int stepFile = glutCreateMenu(stepMenu);
+	const int lightTypeFile = glutCreateMenu(lightTypeMenu);
+	glutAddMenuEntry("Point", LIGHT_POINT);
+	glutAddMenuEntry("Parallel", LIGHT_PAR);
+	glutAddMenuEntry("Ambient", LIGHT_AMB);
+
+	const int lightShadeFile = glutCreateMenu(lightShadeMenu);
+	glutAddMenuEntry("Flat", SHADE_FLAT);
+	glutAddMenuEntry("Gouraud", SHADE_GOUR);
+	glutAddMenuEntry("Phong", SHADE_PHONG);
+
+	const int lightFile = glutCreateMenu(lightMenu);
+	glutAddMenuEntry("Add", LIGHT_ADD);
+	glutAddMenuEntry("Deactivate", LIGHT_CLEAR);
+	glutAddMenuEntry("Set Active", LIGHT_ACTIVE);
+	glutAddMenuEntry("Color", LIGHT_COLOR);
+	glutAddMenuEntry("Position", LIGHT_POSITION);
+	glutAddMenuEntry("Orient", LIGHT_ORIENT);
+	glutAddSubMenu("Type", lightTypeFile);
+	glutAddSubMenu("Shade", lightShadeFile);
+
+	const int stepFile = glutCreateMenu(stepMenu);
 	glutAddMenuEntry("Rotate", STEP_ROTATE);
 	glutAddMenuEntry("Scale", STEP_SCALE);
 	glutAddMenuEntry("Move", STEP_MOVE);
@@ -450,7 +576,8 @@ void initMenu()
 	glutAddSubMenu("File", menuFile);
 	glutAddMenuEntry("Add Primitve", MAIN_PRIM);
 	glutAddSubMenu("Model", modelFile);
-	glutAddSubMenu("Camera", camFile);
+	glutAddSubMenu("Camera", camFile);	
+	glutAddSubMenu("Light", lightFile);
 	glutAddSubMenu("Set Step Size", stepFile);
 	glutAddMenuEntry("Demo", MAIN_DEMO);
 	glutAddMenuEntry("About", MAIN_ABOUT);
