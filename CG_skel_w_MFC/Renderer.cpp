@@ -196,11 +196,11 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 		vec3 p1 = new_temp;
 		vec3 p2 = new_temp;
 		p1.x -= 3; p2.x += 3;
-		Drawline(p1, p2, 'w');
+		Drawline(p1, p2, vec3(1,1,1));
 		p1 = new_temp;
 		p2 = new_temp;
 		p1.y -= 3; p2.y += 3;
-		Drawline(p1, p2, 'w');
+		Drawline(p1, p2, vec3(1,1,1));
 	}
 
 	// draw object
@@ -229,7 +229,7 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 			p[j] = vec4t3(temp);
 
 			if (show_normalsV) {
-				Drawline(p[j], n, 'g');
+				Drawline(p[j], n, vec3(0,1,0));
 			}
 		}
 
@@ -238,10 +238,8 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 
 
 		// draw normals
-		vec4 v1 = (*vertices)[i];
-		vec4 v2 = (*vertices)[i + 1];
-		vec4 v3 = (*vertices)[i + 2];
-		center = WTransform * MTransform * (center/=3);
+		center /= 3;
+		center = WTransform * MTransform * center;
 		f_normal += center;
 
 		center = STransform * Projection * CTransform * center;
@@ -250,7 +248,7 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 		vec3 c = vec4t3(center);
 
 		if (show_normalsF) {
-			Drawline(c, n.x, 't');
+			Drawline(c, n, vec3(0,1,1));
 		}
 		
 	}
@@ -272,7 +270,7 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 
 		}
 
-		Drawline(p[0], p[1], 'r');
+		Drawline(p[0], p[1], vec3(1,0,0));
 	}
 
 }
