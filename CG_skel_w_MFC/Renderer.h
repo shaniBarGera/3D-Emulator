@@ -21,7 +21,7 @@ class Renderer
 	mat4 MTranslate;
 	mat4 NWTransform;
 
-	bool bbox;
+	bool bbox = false;
 	
 	void CreateBuffers(int width, int height);
 	void CreateLocalBuffer();
@@ -44,8 +44,8 @@ public:
 	Renderer(int width, int height);
 	~Renderer(void);
 	void Init();
-	void DrawTriangles(const vector<vec3>* eyes, const vector<vec3>* vertices,char color, const vector<vec3>* normals = NULL);
-	void Drawline(int x1, int x2, int y1, int y2, char color, bool save_poly = true);
+	void DrawTriangles(const vector<vec3>* eyes, const vector<vec3>* vertices,vec3 color, const vector<vec3>* normals = NULL, const vector<vec3>* vertex_bbox = NULL);
+	void Drawline(vec3 p1, vec3 p2, vec3 color, bool save_poly = false);
 	void SetCameraMatrices(const mat4& cTransform, const mat4& projection);
 	void SetScreenTransform(GLfloat min_x, GLfloat min_y, GLfloat max_x, GLfloat max_y);
 	void SetObjectMatrices(const mat4& mTranslate, const mat4& mTransform, const mat4& wTransform, const mat4& nTransform, const mat4& nwTransform);
@@ -54,12 +54,10 @@ public:
 	void ClearDepthBuffer();
 	void SetDemoBuffer();
 	void reshape(int w,int h);
-	bool setPixelOn(int x, int y, char color);
-	string get_color(char color);
-	bool pixel_is_on(int x, int y, char color);
+	bool setPixelOn(int x, int y, vec3 p1, vec3 p2, vec3 p3, vec3 color);
 	void SetFlags(bool bbox, bool show_normalsV, bool show_normalsF);
 	//void FillPolygon(vec3 p1, vec3 p2, vec3 p3, char color, vector<vector<int>>* curr_poly);
-	void FillPolygon(char color, vec3 p1, vec3 p2, vec3 p3);
+	void FillPolygon(vec3 color, vec3 p1, vec3 p2, vec3 p3);
 	void put_z(int x, int y, GLfloat Z);
 	GLfloat get_z(int x, int y);
 };

@@ -14,6 +14,11 @@ protected:
 
 
 class Light {
+	vec3 place;
+	vec3 color;
+	GLfloat intensity;
+	bool point = false; // default is parallel
+	Light();
 
 };
 
@@ -49,8 +54,6 @@ class Scene {
 	vector<Light*> lights;
 	
 	Renderer *m_renderer;
-
-	void _add_line(Model* model, vec3 v1, vec3 v2, vec3 v3);
 
 public:
 	vector<Model*> models;
@@ -89,5 +92,5 @@ public:
 	void modelFrame(char frame);
 	void camMove(char dir);
 	void camFrame(char frame);
-	void color(string color);
+	void color(vec3 color);
 };

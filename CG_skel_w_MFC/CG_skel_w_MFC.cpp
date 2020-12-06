@@ -38,6 +38,7 @@
 
 #define MODEL_ACTIVE 1
 #define MODEL_COLOR 2
+#define MODEL_BBOX 3
 
 
 #define FRAME_WORLD 1
@@ -314,7 +315,7 @@ void normalMenu(int id) {
 
 void modelMenu(int id) {
 	int curr_model;
-	string color;
+	vec3 color;
 	switch (id)
 	{
 	case MODEL_ACTIVE:
@@ -327,9 +328,11 @@ void modelMenu(int id) {
 		scene->activeModel = curr_model;
 		break;
 	case MODEL_COLOR:
-		printf("color\n");
-		color = dialogBox("Color");
+		color = dialogBoxVec("Color");
 		scene->color(color);
+		break;
+	case MODEL_BBOX:
+		scene->bbox();
 		break;
 	}
 }
@@ -436,6 +439,7 @@ void initMenu()
 	glutAddMenuEntry("Color", MODEL_COLOR);
 	glutAddSubMenu("Normals", normalFile);
 	glutAddSubMenu("Frame", frameFile);
+	glutAddMenuEntry("Add Bounding Box", MODEL_BBOX);
 
 	int stepFile = glutCreateMenu(stepMenu);
 	glutAddMenuEntry("Rotate", STEP_ROTATE);

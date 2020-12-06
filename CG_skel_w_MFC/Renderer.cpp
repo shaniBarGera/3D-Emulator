@@ -12,13 +12,11 @@ Renderer::Renderer() :m_width(512), m_height(512)
 {
 	InitOpenGLRendering();
 	CreateBuffers(512,512);
-	bbox = false;
 }
 Renderer::Renderer(int width, int height) :m_width(width), m_height(height)
 {
 	InitOpenGLRendering();
 	CreateBuffers(width,height);
-	bbox = false;
 }
 
 Renderer::~Renderer(void)
@@ -57,29 +55,40 @@ void Renderer::SetDemoBuffer()
 	}
 }
 
-bool Renderer::setPixelOn(int x, int y, char color) {
+GLfloat Area(vec2 p1, vec2 p2, vec2 p3) {
+	vec2 a = vec2(p1.x - p2.x, p1.y - p2.y);
+	vec2 b = vec2(p3.x - p2.x, p3.y - p2.y);
+	vec2 res = a * b;
+	return sqrt(res.x * res.x + res.y * res.y);
+}
+
+GLfloat depth(int x, int y, vec3 p1, vec3 p2, vec3 p3) {
+	//vec3 posiotion_x, vec3 posiotion_y, vec3 posiotion_z) {
+	vec2 a = vec2(x, y);
+	vec2 b = vec2(p1.x, p1.y);
+	vec2 c = vec2(p2.x, p2.y);
+	vec2 d = vec2(p3.x, p3.y);
+	GLfloat a1 = Area(a, b, c);
+	GLfloat a2 = Area(a, b, d);
+	GLfloat a3 = Area(a, c, d);
+	GLfloat sum_a = a1 + a2 + a3;
+	return (a1 / sum_a) * p1.z + (a2 / sum_a) * p2.z + (a3 / sum_a) * p3.z;
+}
+
+bool Renderer::setPixelOn(int x, int y, vec3 p1, vec3 p2, vec3 p3, vec3 color) {
 	//printf("SET PIXEL ON %d %d\n", x, y);
 	if (x < 0 || x >= m_width || y < 0 || y >= m_width) { 
 		return false; 
 	}
-	int r = 0, g = 0, b = 0;
-	switch (color) {
-	case 'r':
-		r = 1; g = 0; b = 0; break;
-	case 'g':
-		r = 0; g = 1; b = 0; break;
-	case 'b':
-		r = 0; g = 0; b = 1; break;
-	case 'p':
-		r = 1; g = 0; b = 1; break;
-	case 't':
-		r = 0; g = 1; b = 1; break;
-	case 'w':
-		r = 1; g = 1; b = 1; break;
+	GLfloat z = depth(x, y, p1, p2, p3);
+	if (z >= m_zbuffer[INDEXZ(m_width, x, y)]) {
+		return false;
 	}
-	m_outBuffer[INDEX(m_width - 1, x, y, 0)] = r;
-	m_outBuffer[INDEX(m_width - 1, x, y, 1)] = g;
-	m_outBuffer[INDEX(m_width - 1, x, y, 2)] = b;
+	m_zbuffer[INDEXZ(m_width, x, y)] = z;
+	
+	m_outBuffer[INDEX(m_width - 1, x, y, 0)] = color.x;
+	m_outBuffer[INDEX(m_width - 1, x, y, 1)] = color.y;
+	m_outBuffer[INDEX(m_width - 1, x, y, 2)] = color.z;
 	return true;
 }
 
@@ -90,7 +99,8 @@ int Sign(int dxy)
 	else return 0;
 }
 
-void Renderer::Drawline(int x1, int x2, int y1, int y2, char color, bool save_poly) {
+void Renderer::Drawline(vec3 p1, vec3 p2, vec3 color, bool save_poly) {
+	GLfloat x1 = p1.x, y1 = p1.y, x2 = p2.x, y2 = p2.y;
 	//printf("draw line %d %d %d %d\n", x1, x2, y1, y2);
 	int Dx = x2 - x1;
 	int Dy = y2 - y1;
@@ -114,11 +124,11 @@ void Renderer::Drawline(int x1, int x2, int y1, int y2, char color, bool save_po
 		//# Main loop
 		for (int I = 0; I < D; I++)
 		{
-			//bool ans = setPixelOn(X, Y, color);
+			setPixelOn(X, Y, p1, p2, p2, color);
 			if (save_poly && X >= 0 && X < m_width) {
 				(*curr_poly)[X].push_back(Y);
 			}
-		
+	
 			//# Update (X, Y) and R
 			X += Sx; R += Dy; //# Lateral move
 			if (R >= Dx)
@@ -133,8 +143,7 @@ void Renderer::Drawline(int x1, int x2, int y1, int y2, char color, bool save_po
 		//# Main loop
 		for (int I = 0; I < D; I++)
 		{
-			
-			//bool ans = setPixelOn(X, Y, color);
+			setPixelOn(X, Y, p1, p2, p2, color);
 			if (save_poly && X >= 0 && X < m_width) {
 				(*curr_poly)[X].push_back(Y);
 			}
@@ -151,34 +160,19 @@ void Renderer::Drawline(int x1, int x2, int y1, int y2, char color, bool save_po
 	}
 }
 
-GLfloat Area(vec2 p1, vec2 p2, vec2 p3) {
-	vec2 a = vec2(p1.x - p2.x, p1.y - p2.y);
-	vec2 b = vec2(p3.x - p2.x, p3.y - p2.y);
-	vec2 res = a * b;
-	return sqrt(res.x * res.x + res.y * res.y);
-}
 
-GLfloat depth(int x, int y, vec3 p1, vec3 p2, vec3 p3){
-	//vec3 posiotion_x, vec3 posiotion_y, vec3 posiotion_z) {
-	vec2 a = vec2(x, y); 
-	vec2 b = vec2(p1.x, p1.y);
-	vec2 c = vec2(p2.x, p2.y); 
-	vec2 d = vec2(p3.x, p3.y);
-	GLfloat a1 = Area(a, b, c);
-	GLfloat a2 = Area(a, b, d);
-	GLfloat a3 = Area(a, c, d);
-	GLfloat sum_a = a1 + a2 + a3;
-	return (a1 / sum_a) * p1.z + (a2 / sum_a) * p2.z + (a3 / sum_a) * p3.z;
-}
-
-void Renderer::FillPolygon( char color, vec3 p1, vec3 p2, vec3 p3){
+void Renderer::FillPolygon(vec3 color, vec3 p1, vec3 p2, vec3 p3){
 	//vec3 posiotion_x, vec3 posiotion_y, vec3 posiotion_z){
 	//printf("FILL POLY\n");
+	Drawline(p1, p2, color, true);
+	Drawline(p3, p2, color, true);
+	Drawline(p1, p3, color, true);
+
 	int min_x = max(min(min(p1.x, p2.x), p3.x), 0);
 	int max_x = min(max(max(p1.x, p2.x), p3.x), m_height - 1);
 
 	for (int x = min_x; x <= max_x; ++x) {
-		if ((*curr_poly)[x].size() <= 0){
+		if ((*curr_poly)[x].empty()){
 			continue;
 		}
 
@@ -186,35 +180,34 @@ void Renderer::FillPolygon( char color, vec3 p1, vec3 p2, vec3 p3){
 		int min_y = max(*min_element((*curr_poly)[x].begin(), (*curr_poly)[x].end()), 0);
 
 		for (int y = min_y; y <= max_y; ++y) {
-			GLfloat z = depth(x, y, p1, p2, p3);
-			if (z < m_zbuffer[INDEXZ(m_width, x, y)]) {
-				setPixelOn(x, y, color);
-				m_zbuffer[INDEXZ(m_width, x, y)] = z;
-			}
+			setPixelOn(x, y, p1, p2, p3, color);
 		}
 		(*curr_poly)[x].clear();
 	}
 }
 
-void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertices, char color,const vector<vec3>* normals) {
+void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertices, vec3 color,const vector<vec3>* normals, const vector<vec3>* vertices_bbox) {
 	printf("DRAW TRIANGLE\n");
 	
+	// add cam renderer
 	for (int j = 0; j < eye->size(); j++) {
 		vec4 temp = vec4((*eye)[j]);
-		temp = STransform * Projection * CTransform * temp;
-		GLfloat x = temp.x / temp.w;
-		GLfloat y = temp.y /temp.w;
-		Drawline(x - 3, x + 3, y, y, 'w');
-		Drawline(x, x, y - 3, y + 3, 'w');
+		vec3 new_temp = vec4t3(STransform * Projection * CTransform * temp);
+		vec3 p1 = new_temp;
+		vec3 p2 = new_temp;
+		p1.x -= 3; p2.x += 3;
+		Drawline(p1, p2, 'w');
+		p1 = new_temp;
+		p2 = new_temp;
+		p1.y -= 3; p2.y += 3;
+		Drawline(p1, p2, 'w');
 	}
 
-	int length = (bbox) ? vertices->size() - 36 : vertices->size();
-
-	for (int i = 0; i < length; i+=3)
+	// draw object
+	for (int i = 0; i < vertices->size(); i+=3)
 	{
 		vec3 p[3];
 		vec4 center(0);
-
 		vec4 f_normal;
 		
 		for (int j = 0; j < 3; j++) {
@@ -226,7 +219,6 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 			if (j == 0) {
 				f_normal = normal;
 			}
-
 			
 			normal += temp;
 			temp = STransform * Projection * CTransform * temp;
@@ -234,56 +226,53 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 			normal = STransform * Projection * CTransform * normal;
 			vec3 n = vec4t3(normal);
 
-			vec3 v = vec4t3(temp);
-			p[j] = v;
+			p[j] = vec4t3(temp);
 
 			if (show_normalsV) {
-				Drawline(v.x, n.x, v.y, n.y, 'g');
+				Drawline(p[j], n, 'g');
 			}
 		}
-		
 
-		Drawline(p[0].x, p[1].x, p[0].y, p[1].y, color, &curr_poly);
-		Drawline(p[2].x, p[1].x, p[2].y, p[1].y, color, &curr_poly);
-		Drawline(p[0].x, p[2].x, p[0].y, p[2].y, color, &curr_poly);
-
+		//curr_color = ((i / 3) % 2 == 0) ? 'r' : 'w';
 		FillPolygon(color, p[0], p[1], p[2]);
 
+
+		// draw normals
 		vec4 v1 = (*vertices)[i];
 		vec4 v2 = (*vertices)[i + 1];
 		vec4 v3 = (*vertices)[i + 2];
-		center = (v1 +v2 +v3) / 3;
-		vec4 temp_center = WTransform * MTransform * center;
-		f_normal += temp_center;
+		center = WTransform * MTransform * (center/=3);
+		f_normal += center;
 
-		temp_center = STransform * Projection * CTransform * temp_center;
+		center = STransform * Projection * CTransform * center;
 		f_normal = STransform * Projection * CTransform * f_normal;
 		vec3 n = vec4t3(f_normal);
-		vec3 c = vec4t3(temp_center);
+		vec3 c = vec4t3(center);
 
 		if (show_normalsF) {
-			Drawline(c.x, n.x, c.y, n.y, 't');
+			Drawline(c, n.x, 't');
 		}
 		
 	}
 
-	for (int i = length; i < vertices->size(); i += 3)
-	{
-		GLfloat x[3] = { 0 };
-		GLfloat y[3] = { 0 };
 
-		for (int j = 0; j < 3; j++) {
-			vec4 temp = WTransform * MTransform * vec4((*vertices)[i + j]);
+	// draw bounding box
+	if (!bbox) return;
+
+	for (int i = 0; i < vertices_bbox->size(); i += 2)
+	{
+		printf("i:%d\n", i);
+		vec3 p[2];
+
+		for (int j = 0; j < 2; j++) {
+			vec4 temp = WTransform * MTransform * vec4((*vertices_bbox)[i + j]);
 			temp = STransform * Projection * CTransform * temp;
 			vec3 v = vec4t3(temp);
-			x[j] = v.x;
-			y[j] = v.y;
+			p[j] = v;
 
 		}
 
-		Drawline(x[0], x[1], y[0], y[1], color);
-		Drawline(x[2], x[1], y[2], y[1], color);
-		Drawline(x[0], x[2], y[0], y[2], color);
+		Drawline(p[0], p[1], 'r');
 	}
 
 }
@@ -407,6 +396,7 @@ void Renderer::SetObjectMatrices(const mat4& mTranslate, const mat4& mTransform,
 	NTransform = nwTransform * nTransform;
 	WTransform = wTransform;
 	MTranslate = mTranslate;
+
 	
 }
 

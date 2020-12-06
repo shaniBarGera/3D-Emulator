@@ -61,7 +61,7 @@ void Scene::draw()
 		 m_renderer->SetCameraMatrices(cam->cTransform, cam->projection);
 		 m_renderer->SetObjectMatrices(model->m_translate, model->m_transform, model->_world_transform, model->_normal_transform, model->_normal_world_transform);
 		 m_renderer->SetFlags(model->bbox, model->show_normalsV, model->show_normalsF);
-		 m_renderer->DrawTriangles(&eyes, &model->vertex_positions, model->color, &model->vertex_normal);
+		 m_renderer->DrawTriangles(&eyes, &model->vertex_positions, model->color, &model->vertex_normal, &model->vertex_bbox);
 	}
 	if (models.size() > 0) {
 		m_renderer->SwapBuffers();
@@ -70,10 +70,9 @@ void Scene::draw()
 	}
 }
 
-void Scene::color(string color) {
-	char c = color[0];
+void Scene::color(vec3 color) {
 	MeshModel* model = (MeshModel*)models[activeModel];
-	model->color = c;
+	model->color = color;
 }
 
 void Scene::drawDemo()
@@ -82,12 +81,6 @@ void Scene::drawDemo()
 	m_renderer->SwapBuffers();
 }
 
-void Scene::_add_line(Model* m, vec3 v1, vec3 v2, vec3 v3) {
-	MeshModel* model = (MeshModel*)m;
-	model->vertex_positions.push_back(v1);
-	model->vertex_positions.push_back(v2);
-	model->vertex_positions.push_back(v3);
-}
 
 //-------------------------------------NORMALS--------------------------------------------//
 
@@ -106,40 +99,7 @@ void Scene::showNormalsF() {
 
 void Scene::bbox() {
 	MeshModel* model = (MeshModel*)models[activeModel];
-	if (model->bbox) {
-		model->vertex_positions.resize(model->vertex_positions.size() - 36);
-		model->bbox = false;
-		return;
-	}
-
-	GLfloat min_x = model->min_x;
-	GLfloat min_y = model->min_y;
-	GLfloat min_z = model->min_z;
-	GLfloat max_x = model->max_x;
-	GLfloat max_y = model->max_y;
-	GLfloat max_z = model->max_z;
-
-	vec3 v000(min_x, min_y, min_z);
-	vec3 v100(max_x, min_y, min_z);
-	vec3 v110(max_x, max_y, min_z);
-	vec3 v001(min_x, min_y, max_z);
-	vec3 v010(min_x, max_y, min_z);
-	vec3 v011(min_x, max_y, max_z);
-	vec3 v101(max_x, min_y, max_z);
-	vec3 v111(max_x, max_y, max_z);
-	_add_line(model, v000, v100, v100);
-	_add_line(model, v000, v010, v010);
-	_add_line(model, v000, v001, v001);
-	_add_line(model, v100, v101, v101);
-	_add_line(model, v100, v110, v110);
-	_add_line(model, v010, v110, v110);
-	_add_line(model, v010, v011, v011);
-	_add_line(model, v111, v110, v111);
-	_add_line(model, v111, v101, v101);
-	_add_line(model, v001, v101, v101);
-	_add_line(model, v001, v011, v011);
-	_add_line(model, v011, v111, v111);
-	model->bbox = true;
+	model->bbox = !model->bbox;
 }
 
 //-------------------------------------MOVE MODEL--------------------------------------------//

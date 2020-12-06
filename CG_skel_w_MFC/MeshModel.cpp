@@ -55,7 +55,6 @@ GLfloat get_min_y(const vector<vec3>* vertices) {
 }
 
 
-
 using namespace std;
 
 struct FaceIdcs
@@ -195,6 +194,33 @@ void MeshModel::loadFile(string fileName)
 	vec4 d = vec4(0, 0, 0, 1);
 	m_transform = mat4(a,b,c,d);
 
+	// add bbox
+	vec3 v000(min_x, min_y, min_z);
+	vec3 v100(max_x, min_y, min_z);
+	vec3 v110(max_x, max_y, min_z);
+	vec3 v001(min_x, min_y, max_z);
+	vec3 v010(min_x, max_y, min_z);
+	vec3 v011(min_x, max_y, max_z);
+	vec3 v101(max_x, min_y, max_z);
+	vec3 v111(max_x, max_y, max_z);
+	_add_line(v000, v100);
+	_add_line(v000, v010);
+	_add_line(v000, v001);
+	_add_line(v100, v101);
+	_add_line(v100, v110);
+	_add_line(v010, v110);
+	_add_line(v010, v011);
+	_add_line(v110, v111);
+	_add_line(v111, v101);
+	_add_line(v001, v101);
+	_add_line(v001, v011);
+	_add_line(v011, v111);
+
+}
+
+void MeshModel::_add_line(vec3 v1, vec3 v2) {
+	vertex_bbox.push_back(v1);
+	vertex_bbox.push_back(v2);
 }
 
 
