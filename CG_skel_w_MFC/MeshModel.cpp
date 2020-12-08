@@ -31,7 +31,7 @@ GLfloat get_max_z(const vector<vec3>* vertices) {
 }
 
 GLfloat get_min_z(const vector<vec3>* vertices) {
-	GLfloat min = 10000;
+	GLfloat min = BIG_NUMBER;
 	for (int i = 0; i < vertices->size() - 1; i++) {
 		if ((*vertices)[i].z <= min) min = (*vertices)[i].z;
 	}
@@ -39,7 +39,7 @@ GLfloat get_min_z(const vector<vec3>* vertices) {
 }
 
 GLfloat get_min_x(const vector<vec3>* vertices) {
-	GLfloat min = 10000;
+	GLfloat min = BIG_NUMBER;
 	for (int i = 0; i < vertices->size() - 1; i++) {
 		if ((*vertices)[i].x <= min) min = (*vertices)[i].x;
 	}
@@ -47,7 +47,7 @@ GLfloat get_min_x(const vector<vec3>* vertices) {
 }
 
 GLfloat get_min_y(const vector<vec3>* vertices) {
-	GLfloat min = 10000;
+	GLfloat min = BIG_NUMBER;
 	for (int i = 0; i < vertices->size() - 1; i++) {
 		if ((*vertices)[i].y <= min) min = (*vertices)[i].y;
 	}

@@ -14,6 +14,7 @@ Scene::Scene() {
 	cameras.push_back(cam);
 	Light* light = new Light();
 	lights.push_back(light);
+	activeLight = 0;
 	activeModel = -1;
 	step_move = 0.01;
 	step_rotate = 10;
@@ -28,6 +29,7 @@ Scene::Scene(Renderer* renderer) {
 	cameras.push_back(cam);
 	Light* light = new Light();
 	lights.push_back(light);
+	activeLight = 0;
 	activeModel = -1;
 	step_move = 0.01;
 	step_rotate = 10;
@@ -38,6 +40,9 @@ Scene::Scene(Renderer* renderer) {
 Scene::~Scene() {
 	for (int i = 0; i < cameras.size(); ++i) {
 		delete[] cameras[i];
+	}
+	for (int i = 0; i < lights.size(); ++i) {
+		delete[] lights[i];
 	}
 }
 
@@ -66,7 +71,7 @@ void Scene::draw()
 		 m_renderer->SetScreenTransform(model->min_x, model->min_y, model->max_x, model->max_y);
 		 m_renderer->SetCameraMatrices(cam->cTransform, cam->projection);
 		 m_renderer->SetObjectMatrices(model->m_translate, model->m_transform, model->_world_transform, model->_normal_transform, model->_normal_world_transform);
-		 m_renderer->SetFlags(model->bbox, model->show_normalsV, model->show_normalsF);
+		 m_renderer->SetFlags(model->bbox, model->show_normalsV, model->show_normalsF, model->uniform);
 		 m_renderer->DrawTriangles(&eyes, &model->vertex_positions, model->color, &model->vertex_normal, &model->vertex_bbox, model->fraction, cam->eye);
 	}
 	if (models.size() > 0) {
@@ -76,9 +81,10 @@ void Scene::draw()
 	}
 }
 
-void Scene::color(vec3 color1, bool uni) {
+void Scene::color(vec3 color, bool uni) {
 	MeshModel* model = (MeshModel*)models[activeModel];
-	model->color = color1;
+	model->color = color;
+	model->uniform = uni;
 }
 
 void Scene::drawDemo()
@@ -248,7 +254,7 @@ void Scene::addPrim() {
 	activeModel = models.size() - 1;
 }
 
-void Scene::addCam(string cmd, vec3 eye, vec3 at, vec3 up) {
+void Scene::addCam(vec3 eye, vec3 at, vec3 up) {
 	Camera* cam = new Camera(eye, at, up);
 	cameras.push_back(cam);
 	activeCamera = cameras.size() - 1;
@@ -423,46 +429,88 @@ void Camera::Frustum(const float left, const float right,
 void Scene::setSurface(GLfloat emissive, GLfloat diffuse, GLfloat specular, GLfloat alpha) {
 	// set active model surface coefficient
 	printf("SET SURFACE\n");
+	MeshModel* model = (MeshModel*)models[activeModel];
+	model->fraction = vec4(emissive, diffuse, specular, alpha);
+
 }
 
 void Scene::addLight() {
 	// add new light
 	printf("ADD LIGHT\n");
+	Light* light = new Light();
+	lights.push_back(light);
+	activeLight = lights.size() - 1;
+
 }
 
 void Scene::deactivateLight() {
 	// deactivate current light
 	printf("DEACTIVATE LIGHT\n");
+	Light* light = lights[activeLight];
+	light->active = false;
 }
 
 void Scene::colorLight(vec3 color) {
 	// color active light
 	printf("COLOR LIGHT\n");
+	Light* light = lights[activeLight];
+	light->color = color;
+
 }
 
 void Scene::positionLight(vec3 position) {
 	// position active light
 	printf("POSITION LIGHT\n");
+	Light* light = lights[activeLight];
+	light->place = position;
 }
 
-void Scene::orientLight() {
+void Scene::orientLight(char cord) {
 	// orient active light
 	printf("ORIENT LIGHT\n");
+	Light* light = lights[activeLight];
+	GLfloat curr_step = step_rotate;
+	switch (cord) {
+	case 'x':
+		light->dir.x += curr_step;
+		break;
+	case 'y':
+		light->dir.y += curr_step;
+		break;
+	case 'z':
+		light->dir.z += curr_step;
+		break;
+	case 'X':
+		light->dir.x -= curr_step;
+		break;
+	case 'Y':
+		light->dir.y -= curr_step;
+	case 'Z':
+		light->dir.z -= curr_step;
+		break;
+	}
 }
 
 void Scene::setLightType(string type) {
 	// set light typeb (parallel/point/ambient)
 	printf("SET LIGHT TYPE\n");
+	Light* light = lights[activeLight];
+	light->type = type;
 }
 
 void Scene::shade(string type) {
 	printf("SHADE\n");
+	// TODO: phong etc
 }
 
 void Scene::dimm() {
 	printf("DIMM\n");
+	Light* light = lights[activeLight];
+	light->intensity -= 0.1;
 }
 
 void Scene::bloom() {
 	printf("BLOOM\n");
+	Light* light = lights[activeLight];
+	light->intensity += 0.1;
 }

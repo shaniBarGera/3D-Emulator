@@ -19,8 +19,9 @@ public:
 	bool bbox = false;
 	bool show_normalsV = false;
 	bool show_normalsF = false;
+	bool uniform = true;
 	char frame = 'm';
-	vec3 color = 'w';
+	vec3 color = vec3(0.5,0.5,0.5);
 	mat4 _world_transform;
 	mat4 _normal_transform;
 	mat4 _normal_world_transform;
@@ -29,7 +30,7 @@ public:
 	mat4 m_translate;
 	mat4 m_rotate;
 
-	vec4 fraction = vec4(0.5,0.2,0.4,5); // surface coefficient. Ka, Kd, Ks, alpha
+	vec4 fraction = vec4(0.5,0.5,0.5,5); // surface coefficient. Ka, Kd, Ks, alpha
 
 	GLfloat min_x;
 	GLfloat min_y;

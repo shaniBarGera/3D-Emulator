@@ -73,7 +73,7 @@ public:
 	void showNormalsV();
 	void showNormalsF();
 	void addPrim();
-	void addCam(string s, vec3 eye, vec3 at, vec3 up);
+	void addCam(vec3 eye, vec3 at, vec3 up);
 	void render();
 	void rotate(char cord);
 	void zoomIn();
@@ -92,7 +92,7 @@ public:
 	void deactivateLight();
 	void colorLight(vec3 color);
 	void positionLight(vec3 position);
-	void orientLight();
+	void orientLight(char cord);
 	void setLightType(string type);
 	void shade(string type);
 	void dimm();

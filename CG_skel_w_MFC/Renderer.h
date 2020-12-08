@@ -4,17 +4,21 @@
 #include "vec.h"
 #include "mat.h"
 #include "GL/glew.h"
+#include <cstring>
 //#include "Scene.h"
 
 class Light {
 public:
 	vec3 place;//0,0,3
 	vec3 color;
-	vec3 intensity;
+	GLfloat intensity;
 	bool point = false; // default is parallel
+	bool active = true;
+	vec3 dir;
+	std::string type = "point";
 	Light() {
 		place = vec3(0, 1, 3);
-		intensity = vec3(1, 1, 1);
+		intensity = 1;
 	}
 };
 
@@ -54,6 +58,7 @@ public:
 
 	bool show_normalsF = false;
 	bool show_normalsV = false;
+	bool uniform = true;
 
 	Renderer();
 	Renderer(int width, int height);
@@ -70,9 +75,12 @@ public:
 	void SetDemoBuffer();
 	void reshape(int w,int h);
 	bool setPixelOn(int x, int y, vec3 p1, vec3 p2, vec3 p3, vec3 color, vec3 normal=NULL, vec4 fraction = vec4(1,1,1,1), vec3 eye = vec3(0,0,3));
-	void SetFlags(bool bbox, bool show_normalsV, bool show_normalsF);
+	void SetFlags(bool bbox, bool show_normalsV, bool show_normalsF, bool uniform);
 	//void FillPolygon(vec3 p1, vec3 p2, vec3 p3, char color, vector<vector<int>>* curr_poly);
 	void FillPolygon(vec3 color, vec3 p1, vec3 p2, vec3 p3, vec3 normal, vec4 fraction, vec3 eye);
 	void put_z(int x, int y, GLfloat Z);
 	GLfloat get_z(int x, int y);
+	GLfloat pointLight(Light* light, vec3 pixel, vec3 normal, vec4 fraction, vec3 eye);
+	GLfloat parallelLight(Light* l);
+	GLfloat ambientLight(Light* l);
 };

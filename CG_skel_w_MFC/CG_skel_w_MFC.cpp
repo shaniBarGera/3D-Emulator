@@ -26,15 +26,13 @@
 
 #define BUFFER_OFFSET( offset )   ((GLvoid*) (offset))
 
-#define CAM_ADD 1
-#define CAM_REND 2
-#define CAM_ACTIVE 3
-
 #define FILE_OPEN 1
+
+#define CAM_REND 1
+#define CAM_ACTIVE 2
 
 #define MAIN_DEMO 1
 #define MAIN_ABOUT 2
-#define MAIN_PRIM 3
 
 #define MODEL_ACTIVE 1
 #define MODEL_COLOR 2
@@ -43,6 +41,10 @@
 
 #define FRAME_WORLD 1
 #define FRAME_MODEL 2
+
+#define CONTROL_CAM 1
+#define CONTROL_MODEL 2
+#define CONTROL_LIGHT 3
 
 #define NORMAL_FACE 1
 #define NORMAL_VERTEX 2
@@ -69,18 +71,23 @@
 #define SHADE_GOUR 2
 #define SHADE_PHONG 3
 
-#define LIGHT_ADD 1
-#define LIGHT_ACTIVE 2
-#define LIGHT_COLOR 3
-#define LIGHT_POSITION 4
-#define LIGHT_ORIENT 5
-#define LIGHT_CLEAR 6
+#define LIGHT_ACTIVE 1
+#define LIGHT_COLOR 2
+#define LIGHT_POSITION 3
+#define LIGHT_ORIENT 4
+#define LIGHT_CLEAR 5
+
+#define ADD_FILE 1
+#define ADD_PRIM 2
+#define ADD_CAM 3
+#define ADD_LIGHT 4
 
 Scene* scene;
 Renderer* renderer;
 
 int last_x, last_y;
 bool lb_down, rb_down, mb_down;
+char control = 'm';
 
 //--------------------------------------------------------------------------
 // Helpers
@@ -95,12 +102,14 @@ string dialogBox(CString s) {
 }
 
 vec3 dialogBoxVec(CString s) {
-	CCmdXyzDialog dlg(s);
+	CXyzDialog dlg(s);
 	vec3 v;
 	if (dlg.DoModal() == IDOK)
 		v = dlg.GetXYZ();
 	return v;
 }
+
+
 
 //----------------------------------------------------------------------------
 // Callbacks
@@ -268,17 +277,24 @@ void motion(int x, int y)
 	glutPostRedisplay();
 }
 
-void fileMenu(int id)
+void addMenu(int id)
 {
+	printf("add menu\n");
+	vec3 eye, at, up;
+	string cmd = "";
 	switch (id)
 	{
-	case FILE_OPEN:
-		CFileDialog dlg(TRUE, _T(".obj"), NULL, NULL, _T("*.obj|*.*"));
-		if (dlg.DoModal() == IDOK)
-		{
-			std::string s((LPCTSTR)dlg.GetPathName());
-			scene->loadOBJModel((LPCTSTR)dlg.GetPathName());
-		}
+	case ADD_CAM:
+		eye = dialogBoxVec("Eye");
+		at = dialogBoxVec("At");
+		up = dialogBoxVec("Up");
+		scene->addCam(eye, at, up);
+		break;
+	case ADD_LIGHT:
+		scene->addLight();
+		break;
+	case ADD_PRIM:
+		scene->addPrim();
 		break;
 	}
 }
@@ -293,25 +309,13 @@ void mainMenu(int id)
 	case MAIN_ABOUT:
 		AfxMessageBox(_T("Computer Graphics"));
 		break;
-	case MAIN_PRIM:
-		scene->addPrim();
-		break;
 	}
 }
 
 void camMenu(int id) {
-	vec3 eye, at, up;
-	string cmd = "";
 	int curr_cam;
 	switch (id)
 	{
-	case CAM_ADD:
-		eye = dialogBoxVec("Eye");
-		at = dialogBoxVec("At");
-		up = dialogBoxVec("Up");
-		//camDialog(&eye, &at, &up);
-		scene->addCam(cmd, eye, at, up);
-		break;
 	case CAM_REND:
 		scene->render();
 		break;
@@ -350,7 +354,6 @@ void modelMenu(int id) {
 			AfxMessageBox(_T("Out of range"));
 			curr_model = stoi(dialogBox("Active Model Number"));
 		}
-		scene->activeCamera = curr_model;
 		scene->activeModel = curr_model;
 		break;
 	case MODEL_BBOX:
@@ -446,9 +449,7 @@ void lightMenu(int id) {
 	int curr_light;
 	vec3 ans;
 	switch (id) {
-	case LIGHT_ADD:
-		scene->addLight();
-		break;
+	
 	case LIGHT_CLEAR:
 		scene->deactivateLight();
 		break;
@@ -468,10 +469,22 @@ void lightMenu(int id) {
 		ans = dialogBoxVec("Set Light Position");
 		scene->positionLight(ans);
 		break;
-	case LIGHT_ORIENT:
-		scene->orientLight();
+	}
+}
+
+void controlMenu(int id) {
+	switch (id) {
+	case CONTROL_CAM:
+		control = 'c';
+		break;
+	case CONTROL_MODEL:
+		control = 'm';
+		break;
+	case CONTROL_LIGHT:
+		control = 'l';
 		break;
 	}
+
 }
 
 void projMenu(int id) {
@@ -506,79 +519,103 @@ void projMenu(int id) {
 
 }
 
+void fileMenu(int id)
+{
+	switch (id)
+	{
+	case FILE_OPEN:
+		CFileDialog dlg(TRUE, _T(".obj"), NULL, NULL, _T("*.obj|*.*"));
+		if (dlg.DoModal() == IDOK)
+		{
+			std::string s((LPCTSTR)dlg.GetPathName());
+			scene->loadOBJModel((LPCTSTR)dlg.GetPathName());
+		}
+		break;
+	}
+}
+
+
 void initMenu()
 {
 	const int menuFile = glutCreateMenu(fileMenu);
 	glutAddMenuEntry("Open..", FILE_OPEN);
 
-	const int projFile = glutCreateMenu(projMenu);
+	const int menuAdd = glutCreateMenu(addMenu);
+	glutAddMenuEntry("Primitve", ADD_PRIM);
+	glutAddMenuEntry("Camera", ADD_CAM);
+	glutAddMenuEntry("Light", ADD_LIGHT);
+
+	const int menuProj = glutCreateMenu(projMenu);
 	glutAddMenuEntry("Orthogonal", PROJ_ORT);
 	glutAddMenuEntry("Prespective", PROJ_PRES);
 	glutAddMenuEntry("Prespective by Aspect Ratio", PROJ_GEO);
 
-	const int camFrameFile = glutCreateMenu(camFrameMenu);
+	const int menuCamFrame = glutCreateMenu(camFrameMenu);
 	glutAddMenuEntry("View", CAM_FRAME_VIEW);
 	glutAddMenuEntry("World", CAM_FRAME_WORLD);
 
-	const int camFile = glutCreateMenu(camMenu);
-	glutAddMenuEntry("Add", CAM_ADD);
+	const int menuCam = glutCreateMenu(camMenu);
 	glutAddMenuEntry("Set Active", CAM_ACTIVE);
 	glutAddMenuEntry("Render", CAM_REND);
-	glutAddSubMenu("Projection", projFile);
-	glutAddSubMenu("Frame", camFrameFile);
+	glutAddSubMenu("Projection", menuProj);
+	glutAddSubMenu("Frame", menuCamFrame);
 
-	const int frameFile = glutCreateMenu(frameMenu);
+	const int menuFrame = glutCreateMenu(frameMenu);
 	glutAddMenuEntry("Model", FRAME_MODEL);
 	glutAddMenuEntry("World", FRAME_WORLD);
 
-	const int normalFile = glutCreateMenu(normalMenu);
+	const int menuNormal = glutCreateMenu(normalMenu);
 	glutAddMenuEntry("Face", NORMAL_FACE);
 	glutAddMenuEntry("Vertex", NORMAL_VERTEX);
 
-	const int colorFile = glutCreateMenu(colorMenu);
+	const int menuColor = glutCreateMenu(colorMenu);
 	glutAddMenuEntry("Uniform", COLOR_UNI);
 	glutAddMenuEntry("Non-Uniform", COLOR_XUNI);
 
-	const int modelFile = glutCreateMenu(modelMenu);
+	const int menuModel = glutCreateMenu(modelMenu);
 	glutAddMenuEntry("Set Active", MODEL_ACTIVE);
-	glutAddSubMenu("Color", colorFile);
-	glutAddSubMenu("Normals", normalFile);
-	glutAddSubMenu("Frame", frameFile);
+	glutAddSubMenu("Color", menuColor);
+	glutAddSubMenu("Normals", menuNormal);
+	glutAddSubMenu("Frame", menuFrame);
 	glutAddMenuEntry("Bounding Box", MODEL_BBOX);
 	glutAddMenuEntry("Surface Coefficient", MODEL_SURFACE);
 
-	const int lightTypeFile = glutCreateMenu(lightTypeMenu);
+	const int menuLightType = glutCreateMenu(lightTypeMenu);
 	glutAddMenuEntry("Point", LIGHT_POINT);
 	glutAddMenuEntry("Parallel", LIGHT_PAR);
 	glutAddMenuEntry("Ambient", LIGHT_AMB);
 
-	const int lightShadeFile = glutCreateMenu(lightShadeMenu);
+	const int menuLightShade = glutCreateMenu(lightShadeMenu);
 	glutAddMenuEntry("Flat", SHADE_FLAT);
 	glutAddMenuEntry("Gouraud", SHADE_GOUR);
 	glutAddMenuEntry("Phong", SHADE_PHONG);
 
-	const int lightFile = glutCreateMenu(lightMenu);
-	glutAddMenuEntry("Add", LIGHT_ADD);
-	glutAddMenuEntry("Deactivate", LIGHT_CLEAR);
-	glutAddMenuEntry("Set Active", LIGHT_ACTIVE);
+	const int menuLight = glutCreateMenu(lightMenu);
 	glutAddMenuEntry("Color", LIGHT_COLOR);
 	glutAddMenuEntry("Position", LIGHT_POSITION);
-	glutAddMenuEntry("Orient", LIGHT_ORIENT);
-	glutAddSubMenu("Type", lightTypeFile);
-	glutAddSubMenu("Shade", lightShadeFile);
+	glutAddSubMenu("Type", menuLightType);
+	glutAddSubMenu("Shade", menuLightShade);
 
-	const int stepFile = glutCreateMenu(stepMenu);
+	const int menuStep = glutCreateMenu(stepMenu);
 	glutAddMenuEntry("Rotate", STEP_ROTATE);
 	glutAddMenuEntry("Scale", STEP_SCALE);
 	glutAddMenuEntry("Move", STEP_MOVE);
 
+	const int menuControl = glutCreateMenu(controlMenu);
+	glutAddMenuEntry("File", ADD_FILE);
+	glutAddMenuEntry("Primitve", ADD_PRIM);
+	glutAddMenuEntry("Camera", ADD_CAM);
+	glutAddMenuEntry("Light", ADD_LIGHT);
+
+
 	glutCreateMenu(mainMenu);
 	glutAddSubMenu("File", menuFile);
-	glutAddMenuEntry("Add Primitve", MAIN_PRIM);
-	glutAddSubMenu("Model", modelFile);
-	glutAddSubMenu("Camera", camFile);
-	glutAddSubMenu("Light", lightFile);
-	glutAddSubMenu("Set Step Size", stepFile);
+	glutAddSubMenu("Add", menuAdd);
+	glutAddSubMenu("Camera", menuCam);
+	glutAddSubMenu("Model", menuModel);
+	glutAddSubMenu("Light", menuLight);
+	glutAddSubMenu("Set Step Size", menuStep);
+	glutAddSubMenu("Control", menuControl);
 	glutAddMenuEntry("Demo", MAIN_DEMO);
 	glutAddMenuEntry("About", MAIN_ABOUT);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);

@@ -75,41 +75,55 @@ GLfloat depth(int x, int y, vec3 p1, vec3 p2, vec3 p3) {
 	return (a1 / sum_a) * p1.z + (a2 / sum_a) * p2.z + (a3 / sum_a) * p3.z;
 }
 
+GLfloat Renderer::pointLight(Light* light, vec3 pixel, vec3 normal, vec4 fraction, vec3 eye) {
+	vec3 pos_light = light->place;
+	vec3 l = vec3(pixel.x - pos_light.x, pixel.y - pos_light.y, pixel.z - pos_light.z);
+	l = normalize(l);
+	normal = normalize(normal);
+	GLfloat Ia = light->intensity * fraction[0]; //Ka
+	GLfloat Id = light->intensity * dot(l, normal) * fraction[1]; //Kd
+	vec3 v = vec3(pixel.x - eye.x, pixel.y - eye.y, pixel.z - eye.z);
+	v = normalize(v);
+	vec3 r = l - 2 * dot(l, normal) * normal;
+	r = normalize(r);
+	GLfloat Is = light->intensity * fraction[2] * powf(dot(v, r), fraction[3]);
+	return Ia + Id + Is;
+}
+
+GLfloat Renderer::parallelLight(Light* l){
+	return 1.0;
+}
+
+GLfloat Renderer::ambientLight(Light* l){
+	return 1.0;
+}
+
 bool Renderer::setPixelOn(int x, int y, vec3 p1, vec3 p2, vec3 p3, vec3 color, vec3 normal, vec4 fraction,vec3 eye) {
 	//printf("SET PIXEL ON %d %d\n", x, y);
 	if (x < 0 || x >= m_width || y < 0 || y >= m_width) { 
 		return false; 
 	}
+	
+	// hide
 	GLfloat z = depth(x, y, p1, p2, p3);
-
 	if (z >= m_zbuffer[INDEXZ(m_width, x, y)]) {
 		return false;
 	}
-	//cout << "here1";
-	GLfloat I = 1;
+	m_zbuffer[INDEXZ(m_width, x, y)] = z;
+
+	// color
+	GLfloat I = 0;
 	for (int i = 0; i < lights.size();i++) {
-		
-		vec3 pos_light = lights[i]->place;
-		vec3 l = vec3(x - pos_light.x, y - pos_light.y, z - pos_light.z);
-		l = normalize(l);
-		normal = normalize(normal);
-		GLfloat Ia = lights[i]->intensity[0]* fraction[0]; //Ka
-		GLfloat Id = lights[i]->intensity[1] * dot(l, normal)* fraction[1]; //Kd
-		vec3 v = vec3(x - eye.x, y - eye.y, z - eye.z);
-		v = normalize(v);
-		vec3 r = l - 2 * dot(l, normal) * normal;
-		r = normalize(r);
-		GLfloat Is = lights[i]->intensity[2] * fraction[2]* powf(dot(v,r), fraction[3]);
-		I += (Ia + Id + Is);
-		//cout << Ia << Id << Is;
+		if(lights[i]->type == "point")
+			I += pointLight(lights[i], vec3(x,y,z), normal, fraction, eye);
+		else if (lights[i]->type == "parallel")
+			I += parallelLight(lights[i]);
+		else if (lights[i]->type == "ambient")
+			I += ambientLight(lights[i]);
 	}
-	
 	vec3 curr_color = color;
 	curr_color *= 1/I;
 	
-	
-	m_zbuffer[INDEXZ(m_width, x, y)] = z;
-	//color *= 0.5*factor;
 	m_outBuffer[INDEX(m_width - 1, x, y, 0)] = curr_color.x;
 	m_outBuffer[INDEX(m_width - 1, x, y, 1)] = curr_color.y;
 	m_outBuffer[INDEX(m_width - 1, x, y, 2)] = curr_color.z;
@@ -260,11 +274,7 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 				Drawline(p[j], n, vec3(0,1,0));
 			}
 		}
-
-		//curr_color = ((i / 3) % 2 == 0) ? 'r' : 'w';
 		
-
-
 		// draw normals
 		center /= 3;
 		center = WTransform * MTransform * center;
@@ -274,7 +284,14 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 		f_normal = STransform * Projection * CTransform * f_normal;
 		vec3 n = vec4t3(f_normal);
 		vec3 c = vec4t3(center);
-		FillPolygon(color, p[0], p[1], p[2],n, fraction, pos_camera);
+
+		vec3 curr_color = color;
+		if (!uniform) {
+			printf("not uniform i:%d\n",i);
+			curr_color = ((i / 3) % 2 == 0)? vec3(0.5, 0.5, 0.5) : color;
+		}
+
+		FillPolygon(curr_color, p[0], p[1], p[2],n, fraction, pos_camera);
 		if (show_normalsF) {
 			Drawline(c, n, vec3(0,1,1));
 		}
@@ -287,7 +304,6 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 
 	for (int i = 0; i < vertices_bbox->size(); i += 2)
 	{
-		printf("i:%d\n", i);
 		vec3 p[2];
 
 		for (int j = 0; j < 2; j++) {
@@ -426,10 +442,11 @@ void Renderer::SetObjectMatrices(const mat4& mTranslate, const mat4& mTransform,
 	
 }
 
-void Renderer::SetFlags(bool bbox, bool show_normalsV, bool show_normalsF) {
+void Renderer::SetFlags(bool bbox, bool show_normalsV, bool show_normalsF, bool uniform) {
 	this->bbox = bbox;
 	this->show_normalsF = show_normalsF;
 	this->show_normalsV = show_normalsV;
+	this->uniform = uniform;
 }
 
 void Renderer::Init() {
