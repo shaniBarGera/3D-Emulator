@@ -122,7 +122,7 @@ struct vec2 {
 
 inline
 GLfloat dot( const vec2& u, const vec2& v ) {
-    return 0; /*BUG*/
+    return u.x*v.x + u.y*v.y; /*BUG*/
 }
 
 inline

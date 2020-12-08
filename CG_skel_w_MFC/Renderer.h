@@ -15,7 +15,7 @@ public:
 	bool point = false; // default is parallel
 	bool active = true;
 	vec3 dir;
-	std::string type = "point";
+	std::string type = "ambient";
 	Light() {
 		place = vec3(0, 1, 3);
 		intensity = 1;
@@ -26,7 +26,7 @@ using namespace std;
 class Renderer
 {
 	float *m_outBuffer; // 3*width*height
-	float *m_zbuffer; // width*height
+	GLfloat *m_zbuffer; // width*height
 	vector<vector<int>>* curr_poly;
 
 	mat4 CTransform;
