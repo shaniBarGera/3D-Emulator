@@ -86,6 +86,7 @@ bool Renderer::setPixelOn(int x, int y, vec3 p1, vec3 p2, vec3 p3, vec3 color, v
 		return false;
 	}
 	//cout << "here1";
+	GLfloat I = 1;
 	for (int i = 0; i < lights.size();i++) {
 		
 		vec3 pos_light = lights[i]->place;
@@ -99,19 +100,19 @@ bool Renderer::setPixelOn(int x, int y, vec3 p1, vec3 p2, vec3 p3, vec3 color, v
 		vec3 r = l - 2 * dot(l, normal) * normal;
 		r = normalize(r);
 		GLfloat Is = lights[i]->intensity[2] * fraction[2]* powf(dot(v,r), fraction[3]);
-		color *= (Ia + Id + Is);
+		I += (Ia + Id + Is);
 		//cout << Ia << Id << Is;
 	}
 	
-	
-	
+	vec3 curr_color = color;
+	curr_color *= 1/I;
 	
 	
 	m_zbuffer[INDEXZ(m_width, x, y)] = z;
 	//color *= 0.5*factor;
-	m_outBuffer[INDEX(m_width - 1, x, y, 0)] = color.x;
-	m_outBuffer[INDEX(m_width - 1, x, y, 1)] = color.y;
-	m_outBuffer[INDEX(m_width - 1, x, y, 2)] = color.z;
+	m_outBuffer[INDEX(m_width - 1, x, y, 0)] = curr_color.x;
+	m_outBuffer[INDEX(m_width - 1, x, y, 1)] = curr_color.y;
+	m_outBuffer[INDEX(m_width - 1, x, y, 2)] = curr_color.z;
 	return true;
 }
 
@@ -125,8 +126,8 @@ int Sign(int dxy)
 void Renderer::Drawline(vec3 p1, vec3 p2, vec3 color, bool save_poly) {
 	GLfloat x1 = p1.x, y1 = p1.y, x2 = p2.x, y2 = p2.y;
 	//printf("draw line %d %d %d %d\n", x1, x2, y1, y2);
-	int Dx = x2 - x1;
-	int Dy = y2 - y1;
+	GLfloat Dx = x2 - x1;
+	GLfloat Dy = y2 - y1;
 
 	//# Increments
 	int Sx = Sign(Dx);
@@ -135,13 +136,13 @@ void Renderer::Drawline(vec3 p1, vec3 p2, vec3 color, bool save_poly) {
 	//# Segment length
 	Dx = abs(Dx);
 	Dy = abs(Dy);
-	int D = max(Dx, Dy);
+	GLfloat D = max(Dx, Dy);
 
 	//# Initial remainder
-	double R = D / 2;
+	GLfloat R = D / 2;
 
-	int X = x1;
-	int Y = y1;
+	int X = (int)x1;
+	int Y = (int)y1;
 	if (Dx > Dy)
 	{
 		//# Main loop
@@ -188,12 +189,12 @@ void Renderer::FillPolygon(vec3 color, vec3 p1, vec3 p2, vec3 p3, vec3 normal, v
 	//vec3 posiotion_x, vec3 posiotion_y, vec3 posiotion_z){
 	//printf("FILL POLY\n");
 	Drawline(p1, p2, color, true);
-	Drawline(p3, p2, color, true);
-	Drawline(p1, p3, color, true);
+	Drawline(p2, p3, color, true);
+	Drawline(p3, p1, color, true);
 
 	int min_x = max(min(min(p1.x, p2.x), p3.x), 0);
 	int max_x = min(max(max(p1.x, p2.x), p3.x), m_height - 1);
-
+	int last_dy = BIG_NUMBER;
 	for (int x = min_x; x <= max_x; ++x) {
 		if ((*curr_poly)[x].empty()){
 			continue;
@@ -201,10 +202,14 @@ void Renderer::FillPolygon(vec3 color, vec3 p1, vec3 p2, vec3 p3, vec3 normal, v
 
 		int max_y = min(*max_element((*curr_poly)[x].begin(), (*curr_poly)[x].end()), m_height-1);
 		int min_y = max(*min_element((*curr_poly)[x].begin(), (*curr_poly)[x].end()), 0);
-
+		
 		for (int y = min_y; y <= max_y; ++y) {
 			setPixelOn(x, y, p1, p2, p3, color, normal, fraction,eye);
 		}
+		
+	}
+
+	for (int x = 0; x < m_width; ++x) {
 		(*curr_poly)[x].clear();
 	}
 }
