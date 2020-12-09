@@ -60,22 +60,32 @@ GLfloat Renderer::pointLight(Light* light, vec3 pixel, vec3 normal, vec4 fractio
 	vec3 l = vec3(pixel.x - pos_light.x, pixel.y - pos_light.y, pixel.z - pos_light.z);
 	l = normalize(l);
 	normal = normalize(normal);
-	GLfloat Ia = light->intensity * fraction[0]; //Ka
-	GLfloat Id = light->intensity * dot(l, normal) * fraction[1]; //Kd
+	GLfloat Ia = light->intensity.x * fraction[0]; //Ka
+	GLfloat Id = light->intensity.y * dot(l, normal) * fraction[1]; //Kd
 	vec3 v = vec3(pixel.x - eye.x, pixel.y - eye.y, pixel.z - eye.z);
 	v = normalize(v);
 	vec3 r = l - 2 * dot(l, normal) * normal;
 	r = normalize(r);
-	GLfloat Is = light->intensity * fraction[2] * powf(dot(v, r), fraction[3]);
+	GLfloat Is = light->intensity.z * fraction[2] * powf(dot(v, r), fraction[3]);
 	return Ia + Id + Is;
 }
 
-GLfloat Renderer::parallelLight(Light* l){
-	return 1.0;
+GLfloat Renderer::parallelLight(Light* light, vec4 fraction, vec3 eye, vec3 pixel, vec3 normal){
+	vec3 l = light->dir;
+	l = normalize(l);
+	normal = normalize(normal);
+	GLfloat Ia = light->intensity.x * fraction[0]; //Ka
+	GLfloat Id = light->intensity.y *  dot(l,normal) * fraction[1]; //Kd
+	vec3 v = vec3(pixel.x - eye.x, pixel.y - eye.y, pixel.z - eye.z);
+	v = normalize(v);
+	vec3 r = l - 2 * dot(light->dir, normal) * normal;
+	r = normalize(r);
+	GLfloat Is = light->intensity.z * fraction[2] * powf(dot(v, r), fraction[3]);
+	return Ia + Id + Is;
 }
 
-GLfloat Renderer::ambientLight(Light* l){
-	return l->intensity;
+GLfloat Renderer::ambientLight(Light* l, vec4 fraction){
+	return l->intensity.x * fraction[0]; //Ka
 }
 
 GLfloat Area(vec2 p1, vec2 p2, vec2 p3) {
@@ -94,7 +104,7 @@ GLfloat depth(int x, int y, vec3 p1, vec3 p2, vec3 p3) {
 	return (a1 / sum_a) * p1.z + (a2 / sum_a) * p2.z + (a3 / sum_a) * p3.z;
 }
 
-bool Renderer::setPixelOn(int x, int y, vec3 p1, vec3 p2, vec3 p3, vec3 color, vec3 normal, vec4 fraction,vec3 eye) {
+bool Renderer::setPixelOn(int x, int y, vec3 p1, vec3 p2, vec3 p3, vec3 color, bool shade, vec3 eye, vec3 normal, vec4 fraction) {
 	//printf("SET PIXEL ON %d %d\n", x, y);
 	if (x < 0 || x >= m_width || y < 0 || y >= m_width) { 
 		return false; 
@@ -102,31 +112,28 @@ bool Renderer::setPixelOn(int x, int y, vec3 p1, vec3 p2, vec3 p3, vec3 color, v
 	
 	// hide
 	GLfloat z = depth(x, y, p1, p2, p3);
-	if (x == 256 && y == 256) {
-		printf("SET PIXEL ON:  p0(%d,%d,%f)\np1(%f,%f,%f) p2(%f,%f,%f) p3(%f,%f,%f)\nold_buffer:%f ", x,y,z, p1.x,p1.y,p1.z,
-			p2.x, p2.y, p2.z,
-			p3.x, p3.y, p3.z,
-			m_zbuffer[INDEXZ(m_width, x, y)]);
-	}
 	if (z >= m_zbuffer[INDEXZ(m_width, x, y)]) {
 		return false;
 	}
 	m_zbuffer[INDEXZ(m_width, x, y)] = z;
-	if (x == 256 && y == 256)
-		printf("new_buffer:%f\n", m_zbuffer[INDEXZ(m_width, x, y)]);
 
 	// color
 	GLfloat I = 0;
-	for (int i = 0; i < lights.size();i++) {
-		if(lights[i]->type == "point")
-			I += pointLight(lights[i], vec3(x,y,z), normal, fraction, eye);
-		else if (lights[i]->type == "parallel")
-			I += parallelLight(lights[i]);
-		else if (lights[i]->type == "ambient")
-			I += ambientLight(lights[i]);
-	}
 	vec3 curr_color = color;
-	curr_color *= 1/I;
+	if (shade) {
+		for (int i = 0; i < lights.size(); i++) {
+			if (lights[i]->type == "point")
+				I += pointLight(lights[i], vec3(x, y, z), normal, fraction, eye);
+			else if (lights[i]->type == "parallel")
+				I += parallelLight(lights[i], fraction, eye, vec3(x, y, z), normal);
+			else if (lights[i]->type == "ambient")
+				I += ambientLight(lights[i], fraction);
+			curr_color += lights[i]->color;
+		}
+		curr_color /= lights.size();
+		curr_color *= 1 / I;
+	}
+	
 	
 	m_outBuffer[INDEX(m_width, x, y, 0)] = curr_color.x;
 	m_outBuffer[INDEX(m_width, x, y, 1)] = curr_color.y;
@@ -209,6 +216,8 @@ void Renderer::Drawline(vec3 p1, vec3 p2, vec3 color, bool save_poly) {
 
 
 void Renderer::FillPolygon(vec3 color, vec3 p1, vec3 p2, vec3 p3, vec3 normal, vec4 fraction, vec3 eye){
+	printf("FILL POLY normal(%f,%f,%f) eye(%f,%f,%f)\n", normal.x, normal.y, normal.z, eye.x, eye.y, eye.z);
+	
 	Drawline(p1, p2, color, true);
 	Drawline(p2, p3, color, true);
 	Drawline(p3, p1, color, true);
@@ -224,7 +233,7 @@ void Renderer::FillPolygon(vec3 color, vec3 p1, vec3 p2, vec3 p3, vec3 normal, v
 		int min_y = max(*min_element((*curr_poly)[x].begin(), (*curr_poly)[x].end()), 0);
 		
 		for (int y = min_y; y <= max_y; ++y) {
-			setPixelOn(x, y, p1, p2, p3, color, normal, fraction, eye);
+			setPixelOn(x, y, p1, p2, p3, color, true, eye, normal, fraction);
 		}	
 		(*curr_poly)[x].clear();
 	}
@@ -313,7 +322,7 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 			curr_color = ((i / 3) % 2 == 0)? vec3(0.5, 0.5, 0.5) : color;
 		}
 
-		FillPolygon(curr_color, p[0], p[1], p[2],n, fraction, pos_camera);
+		FillPolygon(curr_color, p[0], p[1], p[2], n, fraction, pos_camera);
 		if (show_normalsF){
 			printf("show normals face\n");
 			Drawline(c, n, vec3(0,1,1));

@@ -178,11 +178,11 @@ void Scene::scale(char dir) {
 		temp[1][1] -= curr_step;
 		temp_normal[1][1] = 1 / temp[1][1];
 		break;
-	case 'z':
+	case 'n':
 		temp[2][2] += curr_step;
 		temp_normal[2][2] = 1 / temp[2][2];
 		break;
-	case 'Z':
+	case 'f':
 		temp[2][2] -= curr_step;
 		temp_normal[2][2] = 1 / temp[2][2];
 		break;
@@ -278,6 +278,7 @@ void Scene::camFrame(char frame) {
 }
 
 void Scene::camMove(char dir) {
+	printf("CAM MOVE\n");
 	MeshModel* model = (MeshModel*)models[activeModel];
 	Camera* cam = (Camera*)cameras[activeCamera];
 	mat4 temp = model->_world_transform;
@@ -472,21 +473,21 @@ void Scene::orientLight(char cord) {
 	Light* light = lights[activeLight];
 	GLfloat curr_step = step_rotate;
 	switch (cord) {
-	case 'x':
+	case 'f':
 		light->dir.x += curr_step;
 		break;
-	case 'y':
+	case 'l':
 		light->dir.y += curr_step;
 		break;
-	case 'z':
+	case 'u':
 		light->dir.z += curr_step;
 		break;
-	case 'X':
+	case 'n':
 		light->dir.x -= curr_step;
 		break;
-	case 'Y':
+	case 'r':
 		light->dir.y -= curr_step;
-	case 'Z':
+	case 'd':
 		light->dir.z -= curr_step;
 		break;
 	}

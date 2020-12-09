@@ -11,14 +11,14 @@ class Light {
 public:
 	vec3 place;//0,0,3
 	vec3 color;
-	GLfloat intensity;
+	vec3 intensity;
 	bool point = false; // default is parallel
 	bool active = true;
-	vec3 dir;
+	vec3 dir = vec3(1,1,0);
 	std::string type = "ambient";
 	Light() {
 		place = vec3(0, 1, 3);
-		intensity = 1;
+		intensity = vec3(1,1,1);
 	}
 };
 
@@ -74,14 +74,14 @@ public:
 	void ClearDepthBuffer();
 	void SetDemoBuffer();
 	void reshape(int w,int h);
-	bool setPixelOn(int x, int y, vec3 p1, vec3 p2, vec3 p3, vec3 color, vec3 normal=NULL, vec4 fraction = vec4(1,1,1,1), vec3 eye = vec3(0,0,3));
+	bool setPixelOn(int x, int y, vec3 p1, vec3 p2, vec3 p3, vec3 color, bool shade = false, vec3 eye = vec3(0, 0, 3), vec3 normal=vec3(0,0,0), vec4 fraction = vec4(1,1,1,1));
 	void SetFlags(bool bbox, bool show_normalsV, bool show_normalsF, bool uniform);
 	//void FillPolygon(vec3 p1, vec3 p2, vec3 p3, char color, vector<vector<int>>* curr_poly);
 	void FillPolygon(vec3 color, vec3 p1, vec3 p2, vec3 p3, vec3 normal, vec4 fraction, vec3 eye);
 	void put_z(int x, int y, GLfloat Z);
 	GLfloat get_z(int x, int y);
 	GLfloat pointLight(Light* light, vec3 pixel, vec3 normal, vec4 fraction, vec3 eye);
-	GLfloat parallelLight(Light* l);
-	GLfloat ambientLight(Light* l);
+	GLfloat parallelLight(Light* light, vec4 fraction, vec3 eye, vec3 pixel, vec3 normal);
+	GLfloat ambientLight(Light* l, vec4 fraction);
 	void drawSkeleton(const vector<vec3>* vertices);
 };

@@ -147,7 +147,6 @@ void keyboard(unsigned char key, int x, int y)
 		//printf("MINUS\n");
 		scene->scale(key);
 		break;
-
 	case 'b':
 		scene->bbox();
 		break;
@@ -167,45 +166,32 @@ void keyboard(unsigned char key, int x, int y)
 		break;
 	case 'y':
 		scene->rotate('y');
+		//control = 'm';
 		break;
 	case 'z':
 		scene->rotate('z');
+		//control = 'm';
 		break;
 	case 'X':
 		scene->rotate('X');
+		//control = 'm';
 		break;
 	case 'Y':
 		scene->rotate('Y');
+		//control = 'm';
 		break;
 	case 'Z':
 		scene->rotate('Z');
-		break;
-
-
-	case 'w': // camera up
-		scene->camMove('u');
-		break;
-	case 'a': // camera left
-		scene->camMove('l');
-		break;
-	case 's': // camera down
-		scene->camMove('d');
-		break;
-	case 'd':  // camera right
-		scene->camMove('r');
-		break;
-	case 'A': // camera close
-		scene->camMove('c');
-		break;
-	case 'D': // camera far
-		scene->camMove('f');
+		//control = 'm';
 		break;
 
 	case '[':
 		scene->dimm();
+		//control = 'l';
 		break;
 	case ']':
 		scene->bloom();
+		//control = 'l';
 		break;
 	}
 
@@ -213,27 +199,38 @@ void keyboard(unsigned char key, int x, int y)
 }
 
 void catchKey(int key, int x, int y) {
-	//printf("CATCH KEY %d\n", key);
+	printf("CATCH KEY\n");
+	char dir;
 	switch (key) {
 	case GLUT_KEY_LEFT:
-		scene->scale('l');
+		dir = 'l';
 		break;
 	case GLUT_KEY_RIGHT:
-		scene->scale('r');
+		dir = 'r';
 		break;
 	case GLUT_KEY_UP:
-		scene->scale('u');
+		dir = 'u';
 		break;
 	case GLUT_KEY_DOWN:
-		scene->scale('d');
+		dir = 'd';
 		break;
 	case GLUT_KEY_HOME:
-		scene->scale('z');
+		dir = 'f';
 		break;
 	case GLUT_KEY_END:
-		scene->scale('Z');
+		dir = 'n';
 		break;
 	}
+
+	printf("control:%c dir:%c\n", control, dir);
+	if (control == 'm')
+		scene->scale(dir);
+	else if (control == 'c')
+		scene->camMove(dir);
+	else if (control == 'l')
+		scene->orientLight(dir);
+	
+
 	glutPostRedisplay();
 }
 
@@ -275,6 +272,7 @@ void motion(int x, int y)
 
 	scene->move(dx, dy);
 	glutPostRedisplay();
+
 }
 
 void addMenu(int id)
@@ -289,12 +287,15 @@ void addMenu(int id)
 		at = dialogBoxVec("At");
 		up = dialogBoxVec("Up");
 		scene->addCam(eye, at, up);
+		control = 'c';
 		break;
 	case ADD_LIGHT:
 		scene->addLight();
+		control = 'l';
 		break;
 	case ADD_PRIM:
 		scene->addPrim();
+		control = 'm';
 		break;
 	}
 }
@@ -326,6 +327,7 @@ void camMenu(int id) {
 			curr_cam = stoi(dialogBox("Active Camera Number"));
 		}
 		scene->activeCamera = curr_cam;
+		control = 'c';
 		break;
 	}
 }
@@ -355,6 +357,7 @@ void modelMenu(int id) {
 			curr_model = stoi(dialogBox("Active Model Number"));
 		}
 		scene->activeModel = curr_model;
+		control = 'm';
 		break;
 	case MODEL_BBOX:
 		scene->bbox();
@@ -460,6 +463,7 @@ void lightMenu(int id) {
 			curr_light = stoi(dialogBox("Active Light Number"));
 		}
 		scene->activeLight = curr_light;
+		control = 'l';
 		break;
 	case LIGHT_COLOR:
 		ans = dialogBoxVec("Set Light Color");
@@ -473,18 +477,22 @@ void lightMenu(int id) {
 }
 
 void controlMenu(int id) {
+	printf("CONTROL before %c\n", control);
 	switch (id) {
 	case CONTROL_CAM:
+		printf("cam\n");
 		control = 'c';
 		break;
 	case CONTROL_MODEL:
+		printf("model\n");
 		control = 'm';
 		break;
 	case CONTROL_LIGHT:
+		printf("light\n");
 		control = 'l';
 		break;
 	}
-
+	printf("CONTROL after %c\n", control);
 }
 
 void projMenu(int id) {
@@ -602,10 +610,9 @@ void initMenu()
 	glutAddMenuEntry("Move", STEP_MOVE);
 
 	const int menuControl = glutCreateMenu(controlMenu);
-	glutAddMenuEntry("File", ADD_FILE);
-	glutAddMenuEntry("Primitve", ADD_PRIM);
-	glutAddMenuEntry("Camera", ADD_CAM);
-	glutAddMenuEntry("Light", ADD_LIGHT);
+	glutAddMenuEntry("Model", CONTROL_MODEL);
+	glutAddMenuEntry("Camera", CONTROL_CAM);
+	glutAddMenuEntry("Light", CONTROL_LIGHT);
 
 
 	glutCreateMenu(mainMenu);
