@@ -216,7 +216,7 @@ void Renderer::Drawline(vec3 p1, vec3 p2, vec3 color, bool save_poly) {
 
 
 void Renderer::FillPolygon(vec3 color, vec3 p1, vec3 p2, vec3 p3, vec3 normal, vec4 fraction, vec3 eye){
-	printf("FILL POLY normal(%f,%f,%f) eye(%f,%f,%f)\n", normal.x, normal.y, normal.z, eye.x, eye.y, eye.z);
+	//printf("FILL POLY normal(%f,%f,%f) eye(%f,%f,%f)\n", normal.x, normal.y, normal.z, eye.x, eye.y, eye.z);
 	
 	Drawline(p1, p2, color, true);
 	Drawline(p2, p3, color, true);
