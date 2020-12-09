@@ -73,6 +73,7 @@ void Scene::draw()
 		 m_renderer->SetObjectMatrices(model->m_translate, model->m_transform, model->_world_transform, model->_normal_transform, model->_normal_world_transform);
 		 m_renderer->SetFlags(model->bbox, model->show_normalsV, model->show_normalsF, model->uniform);
 		 m_renderer->DrawTriangles(&eyes, &model->vertex_positions, model->color, &model->vertex_normal, &model->vertex_bbox, model->fraction, cam->eye);
+		 //m_renderer->drawSkeleton(&model->vertex_positions);
 	}
 	if (models.size() > 0) {
 		m_renderer->SwapBuffers();

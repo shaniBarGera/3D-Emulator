@@ -79,7 +79,7 @@ GLfloat Renderer::ambientLight(Light* l){
 }
 
 GLfloat Area(vec2 p1, vec2 p2, vec2 p3) {
-	return length((p1 - p2) * (p3 - p2));
+	return 0.5 * abs(p1.x * (p2.y - p3.y) + p2.x * (p3.y - p1.y) + p3.x * (p1.y - p2.y));
 }
 
 GLfloat depth(int x, int y, vec3 p1, vec3 p2, vec3 p3) {
@@ -102,10 +102,18 @@ bool Renderer::setPixelOn(int x, int y, vec3 p1, vec3 p2, vec3 p3, vec3 color, v
 	
 	// hide
 	GLfloat z = depth(x, y, p1, p2, p3);
-	if (z > m_zbuffer[INDEXZ(m_width, x, y)]) {
+	if (x == 256 && y == 256) {
+		printf("SET PIXEL ON:  p0(%d,%d,%f)\np1(%f,%f,%f) p2(%f,%f,%f) p3(%f,%f,%f)\nold_buffer:%f ", x,y,z, p1.x,p1.y,p1.z,
+			p2.x, p2.y, p2.z,
+			p3.x, p3.y, p3.z,
+			m_zbuffer[INDEXZ(m_width, x, y)]);
+	}
+	if (z >= m_zbuffer[INDEXZ(m_width, x, y)]) {
 		return false;
 	}
 	m_zbuffer[INDEXZ(m_width, x, y)] = z;
+	if (x == 256 && y == 256)
+		printf("new_buffer:%f\n", m_zbuffer[INDEXZ(m_width, x, y)]);
 
 	// color
 	GLfloat I = 0;
@@ -216,16 +224,36 @@ void Renderer::FillPolygon(vec3 color, vec3 p1, vec3 p2, vec3 p3, vec3 normal, v
 		int min_y = max(*min_element((*curr_poly)[x].begin(), (*curr_poly)[x].end()), 0);
 		
 		for (int y = min_y; y <= max_y; ++y) {
-			setPixelOn(x, y, p1, p2, p3, color, normal, fraction,eye);
+			setPixelOn(x, y, p1, p2, p3, color, normal, fraction, eye);
 		}	
 		(*curr_poly)[x].clear();
 	}
 
 }
 
+void Renderer::drawSkeleton(const vector<vec3>* vertices) {
+	printf("DRAW TRIANGLE\n");
+
+	// draw object
+	for (int i = 0; i < vertices->size(); i += 3)
+	{
+		vec3 p[3];
+		for (int j = 0; j < 3; j++) {
+			p[j] = vec4t3(STransform * Projection * CTransform * WTransform * MTransform * vec4((*vertices)[i + j]));
+		}
+		vec3 color = vec3(0, 0, 1);
+		Drawline(p[0], p[1], color);
+		Drawline(p[1], p[2], color);
+		Drawline(p[2], p[0], color);
+	}
+	
+	SetDemoBuffer();
+}
+
 void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertices, vec3 color,const vector<vec3>* normals, const vector<vec3>* vertices_bbox, vec4 fraction, vec3 pos_camera) {
 	printf("DRAW TRIANGLE\n");
-	
+
+
 	// add cam renderer
 	for (int j = 0; j < eye->size(); j++) {
 		vec4 temp = vec4((*eye)[j]);
@@ -292,7 +320,6 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 		}
 		
 	}
-
 
 	// draw bounding box
 	if (!bbox) return;

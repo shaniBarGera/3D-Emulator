@@ -83,4 +83,5 @@ public:
 	GLfloat pointLight(Light* light, vec3 pixel, vec3 normal, vec4 fraction, vec3 eye);
 	GLfloat parallelLight(Light* l);
 	GLfloat ambientLight(Light* l);
+	void drawSkeleton(const vector<vec3>* vertices);
 };
