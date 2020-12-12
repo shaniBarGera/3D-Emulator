@@ -81,12 +81,14 @@ public:
 	void bbox();
 	void focus();
 	void scale(char dir);
-	void move(int dx, int dy);
+	void move(int dx, int dy, int dz = 0);
 	void modelFrame(char frame);
 	void camMove(char dir);
 	void camFrame(char frame);
 	void color(vec3 color1, bool uni = true);
+	void test();
 
+	void clip(vec3 p1, vec3 p2);
 	void setSurface(GLfloat emissive, GLfloat diffuse, GLfloat specular, GLfloat alpha);
 	void addLight();
 	void deactivateLight();

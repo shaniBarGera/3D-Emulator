@@ -53,6 +53,43 @@ void Scene::loadOBJModel(string fileName)
 	activeModel = models.size() - 1;
 }
 
+void Scene::test() {
+	addPrim();
+	/*scale('-');
+	scale('-');
+	scale('-');
+	scale('-');
+	scale('-');
+	scale('-');
+	scale('-');
+	scale('-');*/
+	//move(100, 0, -100);
+	//rotate('x');
+	rotate('y');
+	rotate('y');
+	rotate('y');
+	/*addPrim();
+	scale('-');
+	scale('-');
+	scale('-');
+	scale('-');
+	scale('-');
+	scale('-');
+	scale('-');
+	scale('-');
+	rotate('x');
+	rotate('y');
+	rotate('y');
+	rotate('y');
+	move(-100, 0, 100);*/
+	dimm();
+	dimm();
+	dimm();
+	dimm();
+	addLight();
+	setLightType("point");
+}
+
 void Scene::draw()
 {
 	printf("DRAW\n");
@@ -67,18 +104,27 @@ void Scene::draw()
 	m_renderer->lights = lights;
 	for (size_t i = 0; i < models.size(); ++i) {
 		 MeshModel* model = (MeshModel*)models[i];
-		
-		 m_renderer->SetScreenTransform(model->min_x, model->min_y, model->max_x, model->max_y);
+		 //m_renderer->SetDemoBuffer();
+		 m_renderer->SetScreenTransform();
 		 m_renderer->SetCameraMatrices(cam->cTransform, cam->projection);
 		 m_renderer->SetObjectMatrices(model->m_translate, model->m_transform, model->_world_transform, model->_normal_transform, model->_normal_world_transform);
 		 m_renderer->SetFlags(model->bbox, model->show_normalsV, model->show_normalsF, model->uniform);
 		 m_renderer->DrawTriangles(&eyes, &model->vertex_positions, model->color, &model->vertex_normal, &model->vertex_bbox, model->fraction, cam->eye);
-		 //m_renderer->drawSkeleton(&model->vertex_positions);
 	}
 	if (models.size() > 0) {
 		m_renderer->SwapBuffers();
 		m_renderer->ClearColorBuffer();
 		m_renderer->ClearDepthBuffer();
+	}
+}
+
+void Scene::clip(vec3 pmin, vec3 pmax) {
+	m_renderer->pmin = pmin;
+	m_renderer->pmax = pmax;
+
+	for (int i = 0; i < models.size(); ++i) {
+		MeshModel* model = (MeshModel*)models[i];
+		model->clip = (model->pmin < pmin || model->pmax > pmax);
 	}
 }
 
@@ -118,7 +164,7 @@ void Scene::bbox() {
 //-------------------------------------MOVE MODEL--------------------------------------------//
 
 void Scene::rotate(char cord) {
-	//printf("ROTATE\n");
+	printf("ROTATE\n");
 	MeshModel* model = (MeshModel*)models[activeModel];
 	mat4 temp;
 	GLfloat curr_step = step_rotate;
@@ -238,12 +284,13 @@ void Scene::zoomOut() {
 	cam->cTransform *= cam->S;
 }
 
-void Scene::move(int dx, int dy) {
+void Scene::move(int dx, int dy, int dz) {
 	//printf("MOVE %d %d\n", dx, dy);
 
 	MeshModel* model = (MeshModel*)models[activeModel];
 	model->_world_transform[0][3] += step_move * dx;
 	model->_world_transform[1][3] -= step_move * dy;
+	model->_world_transform[2][3] += step_move * dz;
 }
 
 //-------------------------------------ADD TO SCENE--------------------------------------------//

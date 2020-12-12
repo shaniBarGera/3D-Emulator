@@ -33,6 +33,7 @@
 
 #define MAIN_DEMO 1
 #define MAIN_ABOUT 2
+#define MAIN_CLIP 3
 
 #define MODEL_ACTIVE 1
 #define MODEL_COLOR 2
@@ -139,6 +140,9 @@ void keyboard(unsigned char key, int x, int y)
 		exit(EXIT_SUCCESS);
 		break;
 
+	case 'q':
+		scene->test();
+		break;
 	case '+':
 		//printf("PLUS\n");
 		scene->scale(key);
@@ -302,6 +306,7 @@ void addMenu(int id)
 
 void mainMenu(int id)
 {
+	vec3 pmin, pmax;
 	switch (id)
 	{
 	case MAIN_DEMO:
@@ -310,6 +315,10 @@ void mainMenu(int id)
 	case MAIN_ABOUT:
 		AfxMessageBox(_T("Computer Graphics"));
 		break;
+	case MAIN_CLIP:
+		pmin = dialogBoxVec("Minimum Point\n");
+		pmax = dialogBoxVec("Maximum Point\n");
+		scene->clip(pmin, pmax);
 	}
 }
 
@@ -623,6 +632,7 @@ void initMenu()
 	glutAddSubMenu("Light", menuLight);
 	glutAddSubMenu("Set Step Size", menuStep);
 	glutAddSubMenu("Control", menuControl);
+	glutAddMenuEntry("Clip", MAIN_CLIP);
 	glutAddMenuEntry("Demo", MAIN_DEMO);
 	glutAddMenuEntry("About", MAIN_ABOUT);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);

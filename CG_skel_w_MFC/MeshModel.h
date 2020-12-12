@@ -17,11 +17,14 @@ protected :
 	
 public:
 	bool bbox = false;
+	bool clip = false;
 	bool show_normalsV = false;
 	bool show_normalsF = false;
 	bool uniform = true;
 	char frame = 'm';
 	vec3 color = vec3(0.5,0.5,0.5);
+	vec3 pmin = vec3(-BIG_NUMBER, -BIG_NUMBER, -BIG_NUMBER);
+	vec3 pmax = vec3(BIG_NUMBER, BIG_NUMBER, BIG_NUMBER);
 	mat4 _world_transform;
 	mat4 _normal_transform;
 	mat4 _normal_world_transform;
@@ -30,14 +33,7 @@ public:
 	mat4 m_translate;
 	mat4 m_rotate;
 
-	vec4 fraction = vec4(0.5,0.5,0.5,5); // surface coefficient. Ka, Kd, Ks, alpha
-
-	GLfloat min_x;
-	GLfloat min_y;
-	GLfloat min_z;
-	GLfloat max_z;
-	GLfloat max_x;
-	GLfloat max_y;
+	vec4 fraction = vec4(0.5,0.5,0,5); // surface coefficient. Ka, Kd, Ks, alpha
 
 
 

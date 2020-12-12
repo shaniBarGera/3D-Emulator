@@ -188,6 +188,16 @@ struct vec3 {
     vec3 operator * ( const vec3& v ) const
 	{ return vec3( x*v.x, y*v.y, z*v.z ); }
 
+    bool operator < (const vec3& v) const
+    {
+        return x < v.x || y < v.y || z < v.z;
+    }
+
+    bool operator > (const vec3& v) const
+    {
+        return x > v.x || y > v.y || z > v.z;
+    }
+
     friend vec3 operator * ( const GLfloat s, const vec3& v )
 	{ return v * s; }
 
@@ -268,6 +278,11 @@ GLfloat length( const vec3& v ) {
 inline
 vec3 normalize( const vec3& v ) {
     return v / length(v);
+}
+
+inline
+vec3 round(const vec3& v) {
+    return vec3(round(v.x), round(v.y), round(v.z));
 }
 
 inline

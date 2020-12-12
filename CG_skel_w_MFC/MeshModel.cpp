@@ -180,29 +180,29 @@ void MeshModel::loadFile(string fileName)
 		}
 	}
 
-	min_x = get_min_x(&vertex_positions);
-	min_y = get_min_y(&vertex_positions);
-	min_z = get_min_z(&vertex_positions);
-	max_z = get_max_z(&vertex_positions);
-	max_x = get_max_x(&vertex_positions);
-	max_y = get_max_y(&vertex_positions);
+	pmin.x = get_min_x(&vertex_positions);
+	pmin.y = get_min_y(&vertex_positions);
+	pmin.z = get_min_z(&vertex_positions);
+	pmax.z = get_max_z(&vertex_positions);
+	pmax.x = get_max_x(&vertex_positions);
+	pmax.y = get_max_y(&vertex_positions);
 
 
-	vec4 a = vec4(1, 0, 0, -((max_x+min_x)/2));
-	vec4 b = vec4(0, 1, 0, -((max_y+min_y)/2));
-	vec4 c = vec4(0, 0, 1, -((max_z+min_z)/2));
+	vec4 a = vec4(1, 0, 0, -((pmax.x+pmin.x)/2));
+	vec4 b = vec4(0, 1, 0, -((pmax.y+pmin.y)/2));
+	vec4 c = vec4(0, 0, 1, -((pmax.z+pmin.z)/2));
 	vec4 d = vec4(0, 0, 0, 1);
 	m_transform = mat4(a,b,c,d);
 
 	// add bbox
-	vec3 v000(min_x, min_y, min_z);
-	vec3 v100(max_x, min_y, min_z);
-	vec3 v110(max_x, max_y, min_z);
-	vec3 v001(min_x, min_y, max_z);
-	vec3 v010(min_x, max_y, min_z);
-	vec3 v011(min_x, max_y, max_z);
-	vec3 v101(max_x, min_y, max_z);
-	vec3 v111(max_x, max_y, max_z);
+	vec3 v000(pmin.x, pmin.y, pmin.z);
+	vec3 v100(pmax.x, pmin.y, pmin.z);
+	vec3 v110(pmax.x, pmax.y, pmin.z);
+	vec3 v001(pmin.x, pmin.y, pmax.z);
+	vec3 v010(pmin.x, pmax.y, pmin.z);
+	vec3 v011(pmin.x, pmax.y, pmax.z);
+	vec3 v101(pmax.x, pmin.y, pmax.z);
+	vec3 v111(pmax.x, pmax.y, pmax.z);
 	_add_line(v000, v100);
 	_add_line(v000, v010);
 	_add_line(v000, v001);

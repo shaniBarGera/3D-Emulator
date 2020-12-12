@@ -56,36 +56,39 @@ void Renderer::SetDemoBuffer()
 }
 
 GLfloat Renderer::pointLight(Light* light, vec3 pixel, vec3 normal, vec4 fraction, vec3 eye) {
-	vec3 pos_light = light->place;
-	vec3 l = vec3(pixel.x - pos_light.x, pixel.y - pos_light.y, pixel.z - pos_light.z);
+	vec3 l = light->place - pixel;
 	l = normalize(l);
 	normal = normalize(normal);
-	GLfloat Ia = light->intensity.x * fraction[0]; //Ka
-	GLfloat Id = light->intensity.y * dot(l, normal) * fraction[1]; //Kd
+	GLfloat cos_theta = dot(l, normal);
+	GLfloat Id = (cos_theta < 0) ? 0 : light->intensity * cos_theta * fraction[1]; //Kd
 	vec3 v = vec3(pixel.x - eye.x, pixel.y - eye.y, pixel.z - eye.z);
 	v = normalize(v);
 	vec3 r = l - 2 * dot(l, normal) * normal;
 	r = normalize(r);
-	GLfloat Is = light->intensity.z * fraction[2] * powf(dot(v, r), fraction[3]);
-	return Ia + Id + Is;
+	GLfloat Is = light->intensity * fraction[2] * powf(dot(v, r), fraction[3]);
+	if (pixel.x == 256 && pixel.y == 256) {
+		printf("l:(%f,%f,%f) normal:(%f,%f,%f) costheta:%f\n", l.x, l.y, l.z, normal.x, normal.y, normal.z, cos_theta);
+	}
+	return Id + Is;
 }
 
 GLfloat Renderer::parallelLight(Light* light, vec4 fraction, vec3 eye, vec3 pixel, vec3 normal){
 	vec3 l = light->dir;
 	l = normalize(l);
 	normal = normalize(normal);
-	GLfloat Ia = light->intensity.x * fraction[0]; //Ka
-	GLfloat Id = light->intensity.y *  dot(l,normal) * fraction[1]; //Kd
+	//GLfloat Ia = light->intensity.x * fraction[0]; //Ka
+	GLfloat cos_theta = dot(l, normal);
+	GLfloat Id = (cos_theta < 0)? 0 : light->intensity *  cos_theta * fraction[1]; //Kd
 	vec3 v = vec3(pixel.x - eye.x, pixel.y - eye.y, pixel.z - eye.z);
 	v = normalize(v);
 	vec3 r = l - 2 * dot(light->dir, normal) * normal;
 	r = normalize(r);
-	GLfloat Is = light->intensity.z * fraction[2] * powf(dot(v, r), fraction[3]);
-	return Ia + Id + Is;
+	GLfloat Is = light->intensity * fraction[2] * powf(dot(v, r), fraction[3]);
+	return Id + Is;
 }
 
 GLfloat Renderer::ambientLight(Light* l, vec4 fraction){
-	return l->intensity.x * fraction[0]; //Ka
+	return l->intensity * fraction[0]; //Ka
 }
 
 GLfloat Area(vec2 p1, vec2 p2, vec2 p3) {
@@ -129,9 +132,12 @@ bool Renderer::setPixelOn(int x, int y, vec3 p1, vec3 p2, vec3 p3, vec3 color, b
 			else if (lights[i]->type == "ambient")
 				I += ambientLight(lights[i], fraction);
 			curr_color += lights[i]->color;
+			if (x == 0 && y == 0) {
+				printf("I:%f\n", I);
+			}
 		}
 		curr_color /= lights.size();
-		curr_color *= 1 / I;
+		curr_color *= I;
 	}
 	
 	
@@ -259,9 +265,9 @@ void Renderer::drawSkeleton(const vector<vec3>* vertices) {
 	SetDemoBuffer();
 }
 
+
 void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertices, vec3 color,const vector<vec3>* normals, const vector<vec3>* vertices_bbox, vec4 fraction, vec3 pos_camera) {
 	printf("DRAW TRIANGLE\n");
-
 
 	// add cam renderer
 	for (int j = 0; j < eye->size(); j++) {
@@ -277,13 +283,15 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 		Drawline(p1, p2, vec3(1,1,1));
 	}
 
+
+
 	// draw object
 	for (int i = 0; i < vertices->size(); i+=3)
 	{
 		vec3 p[3];
 		vec4 center(0);
 		vec4 f_normal;
-		
+
 		for (int j = 0; j < 3; j++) {
 			center += vec4((*vertices)[i + j]);
 			vec4 temp = WTransform * MTransform * vec4((*vertices)[i + j]);
@@ -310,25 +318,33 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 		// draw normals
 		center /= 3;
 		center = WTransform * MTransform * center;
-		f_normal += center;
+		vec4 normal_origin = f_normal; // normal that goes out from origin - direction only
+		vec4 normal_center = f_normal + center; // normal that goes from center point - to draw normal line on screen
 
 		center = STransform * Projection * CTransform * center;
-		f_normal = STransform * Projection * CTransform * f_normal;
-		vec3 n = vec4t3(f_normal);
+		normal_center = STransform * Projection * CTransform * normal_center;
+		normal_origin = STransform * Projection * CTransform * normal_origin;
+		vec3 n = vec4t3(normal_center);
+		vec3 n_origin = vec3(normal_origin.x, normal_origin.y, normal_origin.z);
 		vec3 c = vec4t3(center);
 
 		vec3 curr_color = color;
 		if (!uniform) {
 			curr_color = ((i / 3) % 2 == 0)? vec3(0.5, 0.5, 0.5) : color;
+			curr_color = ((i / 3) % 2 == 0)? vec3(0.5, 0.5, 0.5) : color;
 		}
 
-		FillPolygon(curr_color, p[0], p[1], p[2], n, fraction, pos_camera);
+		if (n_origin.z > 0) {
+			FillPolygon(curr_color, p[0], p[1], p[2], n_origin, fraction, pos_camera);
+		}
 		if (show_normalsF){
-			printf("show normals face\n");
 			Drawline(c, n, vec3(0,1,1));
 		}
 		
 	}
+
+	if(lights.size() >= 2)
+		Drawline(lights[1]->place, vec3(256, 256, -BIG_NUMBER), vec3(1, 0, 0));
 
 	// draw bounding box
 	if (!bbox) return;
@@ -458,7 +474,7 @@ void Renderer::SetCameraMatrices(const mat4& cTransform, const mat4& projection)
 	CTransform = cTransform;
 	Projection = projection;
 }
-void Renderer::SetScreenTransform(GLfloat min_x, GLfloat min_y, GLfloat max_x, GLfloat max_y) {
+void Renderer::SetScreenTransform() {
 	STransform[0][3] = m_width / 2;
 	STransform[1][3] = m_height / 2;
 	STransform[0][0] = m_width / 2;
@@ -468,9 +484,7 @@ void Renderer::SetObjectMatrices(const mat4& mTranslate, const mat4& mTransform,
 	MTransform = mTransform;
 	NTransform = nwTransform * nTransform;
 	WTransform = wTransform;
-	MTranslate = mTranslate;
-
-	
+	MTranslate = mTranslate;	
 }
 
 void Renderer::SetFlags(bool bbox, bool show_normalsV, bool show_normalsF, bool uniform) {
