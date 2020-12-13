@@ -55,36 +55,43 @@ void Renderer::SetDemoBuffer()
 	}
 }
 
-GLfloat Renderer::pointLight(Light* light, vec3 pixel, vec3 normal, vec4 fraction, vec3 eye) {
-	vec3 l = light->place - pixel;
-	l = normalize(l);
+GLfloat Renderer::pointLight(Light* light, vec3 pixel, vec3 normal, vec4 fraction, vec3 eye, vec3 screen_pixel) {
+	
+	GLfloat Ia = light->intensity * fraction[0]; //Ka
+	vec3 l = normalize(light->place - pixel);
 	normal = normalize(normal);
 	GLfloat cos_theta = dot(l, normal);
+
+	/*if (screen_pixel.x == 256 && screen_pixel.y == 256) {
+		//printf("POINT LIGHT: place:(%f,%f,%f) pixel:(%f,%f,%f) l:(%f,%f,%f) normal:(%f,%f,%f) costheta:%f\n",
+		light->place.x, light->place.y, light->place.z,
+		pixel.x, pixel.y, pixel.z,
+		l.x, l.y, l.z,
+		normal.x, normal.y, normal.z, cos_theta);
+	}*/
+
 	GLfloat Id = (cos_theta < 0) ? 0 : light->intensity * cos_theta * fraction[1]; //Kd
-	vec3 v = vec3(pixel.x - eye.x, pixel.y - eye.y, pixel.z - eye.z);
+	vec3 v = eye - pixel;
 	v = normalize(v);
 	vec3 r = l - 2 * dot(l, normal) * normal;
 	r = normalize(r);
 	GLfloat Is = light->intensity * fraction[2] * powf(dot(v, r), fraction[3]);
-	if (pixel.x == 256 && pixel.y == 256) {
-		printf("l:(%f,%f,%f) normal:(%f,%f,%f) costheta:%f\n", l.x, l.y, l.z, normal.x, normal.y, normal.z, cos_theta);
-	}
-	return Id + Is;
+
+	return Ia + Id + Is;
 }
 
 GLfloat Renderer::parallelLight(Light* light, vec4 fraction, vec3 eye, vec3 pixel, vec3 normal){
-	vec3 l = light->dir;
-	l = normalize(l);
+	vec3 l = normalize(light->place);
 	normal = normalize(normal);
-	//GLfloat Ia = light->intensity.x * fraction[0]; //Ka
+	GLfloat Ia = light->intensity * fraction[0]; //Ka
 	GLfloat cos_theta = dot(l, normal);
 	GLfloat Id = (cos_theta < 0)? 0 : light->intensity *  cos_theta * fraction[1]; //Kd
-	vec3 v = vec3(pixel.x - eye.x, pixel.y - eye.y, pixel.z - eye.z);
+	vec3 v = eye - pixel;
 	v = normalize(v);
-	vec3 r = l - 2 * dot(light->dir, normal) * normal;
+	vec3 r = l - 2 * dot(light->place, normal) * normal;
 	r = normalize(r);
 	GLfloat Is = light->intensity * fraction[2] * powf(dot(v, r), fraction[3]);
-	return Id + Is;
+	return Ia + Id + Is;
 }
 
 GLfloat Renderer::ambientLight(Light* l, vec4 fraction){
@@ -95,79 +102,33 @@ GLfloat Area(vec2 p1, vec2 p2, vec2 p3) {
 	return 0.5 * abs(p1.x * (p2.y - p3.y) + p2.x * (p3.y - p1.y) + p3.x * (p1.y - p2.y));
 }
 
-GLfloat depth(int x, int y, vec3 p1, vec3 p2, vec3 p3) {
+vec3 getWeights(int x, int y, vec3 p1, vec3 p2, vec3 p3) {
 	vec2 a = vec2(x, y);
 	vec2 b = vec2(p1.x, p1.y);
 	vec2 c = vec2(p2.x, p2.y);
 	vec2 d = vec2(p3.x, p3.y);
-	GLfloat a1 = Area(a, b, c);
+	GLfloat a1 = Area(a, c, d);
 	GLfloat a2 = Area(a, b, d);
-	GLfloat a3 = Area(a, c, d);
+	GLfloat a3 = Area(a, b, c);
 	GLfloat sum_a = a1 + a2 + a3;
-	return (a1 / sum_a) * p1.z + (a2 / sum_a) * p2.z + (a3 / sum_a) * p3.z;
+	return vec3(a1/ sum_a, a2/ sum_a, a3/sum_a);
 }
 
-vec3 getweights(int x, int y, vec3 p1, vec3 p2, vec3 p3) {
-	vec2 a = vec2(x, y);
-	vec2 b = vec2(p1.x, p1.y);
-	vec2 c = vec2(p2.x, p2.y);
-	vec2 d = vec2(p3.x, p3.y);
-	GLfloat a1 = Area(a, b, c);
-	GLfloat a2 = Area(a, b, d);
-	GLfloat a3 = Area(a, c, d);
-	GLfloat sum_a = a1 + a2 + a3;
-	vec3 res = vec3(a1 / sum_a, a2 / sum_a, a3 / sum_a);
-	return res;
-}
-
-bool Renderer::setPixelOn(int x, int y, vec3 p1, vec3 p2, vec3 p3, vec3 color, bool shade,
-	vec3 eye, vec3 normal1, vec3 normal2, vec3 normal3, vec3 normal_f, vec4 fraction) {
+bool Renderer::setPixelOn(vec3 pixel, vec3 color) {
 	//printf("SET PIXEL ON %d %d\n", x, y);
+	int x = pixel.x;
+	int y = pixel.y;
 	if (x < 0 || x >= m_width || y < 0 || y >= m_width) { 
 		return false; 
 	}
-	
-	// hide
-	GLfloat z = depth(x, y, p1, p2, p3);
-	if (z > m_zbuffer[INDEXZ(m_width, x, y)]) {
+	if (pixel.z <= m_zbuffer[INDEXZ(m_width, x, y)]) {
 		return false;
 	}
-	m_zbuffer[INDEXZ(m_width, x, y)] = z;
-
-	// color
-	GLfloat I = 0;
-	vec3 curr_color = color;
-	if (shade) {
-		for (int i = 0; i < lights.size(); i++) {
-			if (lights[i]->type == "point") {
-				vec3 weights = getweights(x, y, p1, p2, p3);
-				vec3 normal = weights.x * normal1 + weights.y * normal2 + weights.z * normal3;
-				if (x == 0 && y == 0) {
-					cout << normal << "\n";
-				}
-				I += pointLight(lights[i], vec3(x, y, z), normal, fraction, eye);
-			}
-			else if (lights[i]->type == "parallel") {
-				vec3 weights = getweights(x, y, p1, p2, p3);
-				vec3 normal = weights.x * normal1 + weights.y * normal2 + weights.z * normal3;
-				I += parallelLight(lights[i], fraction, eye, vec3(x, y, z), normal);
-			}
-			else if (lights[i]->type == "ambient")
-				I += ambientLight(lights[i], fraction);
-			curr_color += lights[i]->color;
-			if (x == 0 && y == 0) {
-				printf("I:%f\n", I);
-			}
-		}
-		curr_color /= lights.size();
-		curr_color *= I;
-	}
+	m_zbuffer[INDEXZ(m_width, x, y)] = pixel.z;
 	
-	
-	
-	m_outBuffer[INDEX(m_width, x, y, 0)] = curr_color.x;
-	m_outBuffer[INDEX(m_width, x, y, 1)] = curr_color.y;
-	m_outBuffer[INDEX(m_width, x, y, 2)] = curr_color.z;
+	m_outBuffer[INDEX(m_width, x, y, 0)] = color.x;
+	m_outBuffer[INDEX(m_width, x, y, 1)] = color.y;
+	m_outBuffer[INDEX(m_width, x, y, 2)] = color.z;
 	return true;
 }
 
@@ -208,7 +169,7 @@ void Renderer::Drawline(vec3 p1, vec3 p2, vec3 color, bool save_poly) {
 				(*curr_poly)[X].push_back(Y);
 			}
 			else if (!save_poly) {
-				setPixelOn(X, Y, p1, p2, p2, color);
+				setPixelOn(vec3(X, Y, BIG_NUMBER), color);
 			}
 	
 			//# Update (X, Y) and R
@@ -229,7 +190,7 @@ void Renderer::Drawline(vec3 p1, vec3 p2, vec3 color, bool save_poly) {
 				(*curr_poly)[X].push_back(Y);
 			}
 			else if (!save_poly) {
-				setPixelOn(X, Y, p1, p2, p2, color);
+				setPixelOn(vec3(X, Y, BIG_NUMBER), color);
 			}
 
 			//# Update (X, Y) and R
@@ -245,9 +206,9 @@ void Renderer::Drawline(vec3 p1, vec3 p2, vec3 color, bool save_poly) {
 }
 
 
-void Renderer::FillPolygon(vec3 color, vec3 p1, vec3 p2, vec3 p3, vec3 normal1, vec3 normal2, vec3 normal3, vec3 normal_f, vec4 fraction, vec3 eye) {
-	//printf("FILL POLY normal(%f,%f,%f) eye(%f,%f,%f)\n", normal.x, normal.y, normal.z, eye.x, eye.y, eye.z);
-
+void Renderer::FillPolygon(vec3 color, vec3 p1, vec3 p2, vec3 p3, vec3 normal1, vec3 normal2, vec3 normal3, vec3 normal_f, vec4 fraction, vec3 eye, mat3 world_ps)
+{
+	
 	Drawline(p1, p2, color, true);
 	Drawline(p2, p3, color, true);
 	Drawline(p3, p1, color, true);
@@ -255,81 +216,87 @@ void Renderer::FillPolygon(vec3 color, vec3 p1, vec3 p2, vec3 p3, vec3 normal1, 
 	int min_x = max(min(min(p1.x, p2.x), p3.x) - 5, 0);
 	int max_x = min(max(max(p1.x, p2.x), p3.x) + 5, m_width - 1);
 	for (int x = min_x; x <= max_x; ++x) {
-		if ((*curr_poly)[x].empty()) {
+		if ((*curr_poly)[x].empty()){
 			continue;
 		}
 
-		int max_y = min(*max_element((*curr_poly)[x].begin(), (*curr_poly)[x].end()), m_height - 1);
+		int max_y = min(*max_element((*curr_poly)[x].begin(), (*curr_poly)[x].end()), m_height-1);
 		int min_y = max(*min_element((*curr_poly)[x].begin(), (*curr_poly)[x].end()), 0);
-
+		
 		for (int y = min_y; y <= max_y; ++y) {
-			if (shade_type == 1) {
-				vec3 weights = getweights(x, y, p1, p2, p3);
-				vec3 curr_color = color;
-				GLfloat I1 = 0; GLfloat I2 = 0; GLfloat I3 = 0; GLfloat I = 0;
-				for (int i = 0; i < lights.size(); i++) {
-					if (lights[i]->type == "point") {
-						I1 += pointLight(lights[i], vec3(p1.x, p1.y, p1.z), normal1, fraction, eye);
-						I2 += pointLight(lights[i], vec3(p2.x, p2.y, p2.z), normal2, fraction, eye);
-						I3 += pointLight(lights[i], vec3(p3.x, p3.y, p3.z), normal3, fraction, eye);
-						I += weights.x * I1 + weights.y * I2 + weights.z * I3;
-					}
-					else if (lights[i]->type == "parallel") {
-						I1 += parallelLight(lights[i], fraction, eye, vec3(p1.x, p1.y, p1.z), normal1);
-						I2 += parallelLight(lights[i], fraction, eye, vec3(p2.x, p2.y, p2.z), normal2);
-						I3 += parallelLight(lights[i], fraction, eye, vec3(p3.x, p3.y, p3.z), normal3);
-						I += weights.x * I1 + weights.y * I2 + weights.z * I3;
-					}
-					else if (lights[i]->type == "ambient")
-						I += ambientLight(lights[i], fraction);
-					curr_color += lights[i]->color;
-					if (x == 0 && y == 0) {
-						printf("I:%f\n", I);
-					}
-				}
-				curr_color /= lights.size();
-				curr_color *= I;
-				setPixelOn(x, y, p1, p2, p3, curr_color, false, eye, normal1, normal2, normal3, normal_f, fraction);
-			}
-			else if (shade_type==2) {
-				vec3 curr_color = color;
-				GLfloat I1 = 0; GLfloat I2 = 0; GLfloat I3 = 0; GLfloat I = 0;
-				for (int i = 0; i < lights.size(); i++) {
-					if (lights[i]->type == "point") {
-						I1 += pointLight(lights[i], vec3(p1.x, p1.y, p1.z), normal_f, fraction, eye);
-						I2 += pointLight(lights[i], vec3(p2.x, p2.y, p2.z), normal_f, fraction, eye);
-						I3 += pointLight(lights[i], vec3(p3.x, p3.y, p3.z), normal_f, fraction, eye);
-						I += (I1 + I2 + I3) / 3;
-					}
-					else if (lights[i]->type == "parallel") {
-						I1 += parallelLight(lights[i], fraction, eye, vec3(p1.x, p1.y, p1.z), normal_f);
-						I2 += parallelLight(lights[i], fraction, eye, vec3(p2.x, p2.y, p2.z), normal_f);
-						I3 += parallelLight(lights[i], fraction, eye, vec3(p3.x, p3.y, p3.z), normal_f);
-						I += (I1 + I2 + I3) / 3;
-					}
-					else if (lights[i]->type == "ambient")
-						I += ambientLight(lights[i], fraction);
-					curr_color += lights[i]->color;
-					if (x == 0 && y == 0) {
-						printf("I:%f\n", I);
-					}
-				}
-				curr_color /= lights.size();
-				curr_color *= I;
-				setPixelOn(x, y, p1, p2, p3, curr_color, false, eye, normal1, normal2, normal3, normal_f, fraction);
-			}
-			else setPixelOn(x, y, p1, p2, p3, color, true, eye, normal1, normal2, normal3, normal_f, fraction);
-		}
-	
+			vec3 weights = getWeights(x, y, p1, p2, p3);
+			vec3 world_pixel = transpose(world_ps) * weights; 
+			vec3 curr_color = color;
 
-	(*curr_poly)[x].clear();
+			GLfloat I = 0; GLfloat I1 = 0; GLfloat I2 = 0; GLfloat I3 = 0;
+			if (shade == 'f') {
+				for (int i = 0; i < lights.size(); i++) {
+					GLfloat curr_I;
+					if (lights[i]->type == "point")
+						curr_I = pointLight(lights[i], world_pixel, normal_f, fraction, eye, vec3(x, y, world_pixel.z));
+					else if (lights[i]->type == "parallel")
+						curr_I = parallelLight(lights[i], fraction, eye, world_pixel, normal_f);
+					else if (lights[i]->type == "ambient")
+						curr_I = ambientLight(lights[i], fraction);
+					curr_I = (curr_I < 0) ? 0 : curr_I;
+					curr_color += lights[i]->color * curr_I;
+					I += curr_I;
+				}
+				
+			}
+			else if (shade == 'g') {
+				for (int i = 0; i < lights.size(); i++) {
+					GLfloat curr_I;
+					if (lights[i]->type == "point") {
+						I1 += pointLight(lights[i], world_ps[0], normal1, fraction, eye, p1);
+						I2 += pointLight(lights[i], world_ps[1], normal2, fraction, eye, p2);
+						I3 += pointLight(lights[i], world_ps[2], normal3, fraction, eye, p3);
+						curr_I = weights.x * I1 + weights.y * I2 + weights.z * I3;
+					}
+					else if (lights[i]->type == "parallel") {
+						I1 += parallelLight(lights[i], fraction, eye, world_ps[0], normal1);
+						I2 += parallelLight(lights[i], fraction, eye, world_ps[1], normal2);
+						I3 += parallelLight(lights[i], fraction, eye, world_ps[2], normal3);
+						curr_I = weights.x * I1 + weights.y * I2 + weights.z * I3;
+					}
+					else if (lights[i]->type == "ambient")
+						curr_I = ambientLight(lights[i], fraction);
+					
+					curr_I = (curr_I < 0) ? 0 : curr_I;
+					curr_color += lights[i]->color * curr_I;
+					I += curr_I;
+				}
+			}
+			else if (shade == 'p') {
+				for (int i = 0; i < lights.size(); i++) {
+					GLfloat curr_I;
+					if (lights[i]->type == "point") {
+						vec3 normal = weights.x * normal1 + weights.y * normal2 + weights.z * normal3;
+						curr_I = pointLight(lights[i], world_pixel, normal, fraction, eye, vec3(x, y, world_pixel.z));
+					}
+					else if (lights[i]->type == "parallel") {
+						vec3 normal = weights.x * normal1 + weights.y * normal2 + weights.z * normal3;
+						curr_I = parallelLight(lights[i], fraction, eye, world_pixel, normal);
+					}
+					else if (lights[i]->type == "ambient")
+						curr_I = ambientLight(lights[i], fraction);
+
+					curr_I = (curr_I < 0) ? 0 : curr_I;
+					curr_color += lights[i]->color * curr_I;
+					I += curr_I;
+					
+				}
+			}
+			curr_color *= I / lights.size();
+			setPixelOn(vec3(x, y, world_pixel.z), curr_color);
+		}	
+		(*curr_poly)[x].clear();
 	}
-}
-	
 
+}
 
 void Renderer::drawSkeleton(const vector<vec3>* vertices) {
-	printf("DRAW TRIANGLE\n");
+	//printf("DRAW TRIANGLE\n");
 
 	// draw object
 	for (int i = 0; i < vertices->size(); i += 3)
@@ -351,10 +318,7 @@ void Renderer::drawSkeleton(const vector<vec3>* vertices) {
 void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertices,
 	vec3 color,const vector<vec3>* normals, const vector<vec3>* vertices_bbox, vec4 fraction, 
 	vec3 pos_camera, vector<vector<vec3>> avg_normals) {
-	printf("DRAW TRIANGLE\n");
-	//cout << avg_normals.size() << "\n";
-	//cout << vertices->size() << "\n";
-	// add cam renderer
+
 	for (int j = 0; j < eye->size(); j++) {
 		vec4 temp = vec4((*eye)[j]);
 		vec3 new_temp = vec4t3(STransform * Projection * CTransform * temp);
@@ -371,10 +335,10 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 
 
 	// draw object
-	
 	for (int i = 0; i < vertices->size(); i+=3)
 	{
 		vec3 p[3];
+		mat3 world_p;
 		vec4 center(0);
 		vec4 f_normal;
 		vec3 norm_per_v[3];
@@ -385,49 +349,42 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 			
 			vec3 avg_n = avg_normals[j+i][0];
 			vec4 avg_normal = NWTransform * NTransform * vec4(avg_n);
-			
-			//avg_normal.w = 0;
+
 			normal.w = 0;
 			
 			if (j == 0) {
 				f_normal = normal;
 			}
-
-			//avg_normal += temp;
+			
 			normal += temp;
-			temp = STransform * Projection * CTransform * temp;
 
 			avg_normal = STransform * Projection * CTransform * avg_normal;
 			normal = STransform * Projection * CTransform * normal;
 			vec3 n = vec4t3(normal);
 			vec3 avg_norm = vec4t3(avg_normal);
-
+			
+			temp = Projection* CTransform* temp;
+			world_p[j] = vec4t3(temp);
+			temp = STransform * temp;
 			p[j] = vec4t3(temp);
 
 			if (show_normalsV) {
 				Drawline(p[j], n, vec3(0,1,0));
-				//Drawline(p[j], avg_norm, vec3(0, 1, 1));
 			}
 
 			norm_per_v[j]=normalize(avg_norm);
 		}
-		//cout << norm_per_v.size();
-		//avg normal transform
 		
-
 		// draw normals
 		center /= 3;
 		center = WTransform * MTransform * center;
 		vec4 normal_origin = f_normal; // normal that goes out from origin - direction only
 		vec4 normal_center = f_normal + center; // normal that goes from center point - to draw normal line on screen
 
-		
-
 		center = STransform * Projection * CTransform * center;
 		normal_center = STransform * Projection * CTransform * normal_center;
 		normal_origin = STransform * Projection * CTransform * normal_origin;
 		vec3 n = vec4t3(normal_center);
-		//vec3 n_origin = vec3(normal_origin.x, normal_origin.y, normal_origin.z);
 		vec3 n_origin = vec3(normal_origin.x, normal_origin.y, normal_origin.z);
 		vec3 c = vec4t3(center);
 
@@ -437,15 +394,17 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 			curr_color = ((i / 3) % 2 == 0)? vec3(0.5, 0.5, 0.5) : color;
 		}
 
-		if (n_origin.z > 0) {
-			FillPolygon(curr_color, p[0], p[1], p[2], norm_per_v[0], norm_per_v[1], norm_per_v[2],n_origin, fraction, pos_camera);
-		}
-		if (show_normalsF){
+		FillPolygon(curr_color, p[0], p[1], p[2], norm_per_v[0], norm_per_v[1], norm_per_v[2], n_origin, fraction, pos_camera, world_p);
+
+		if (show_normalsF)
 			Drawline(c, n, vec3(0,1,1));
-		}
 		
 	}
 
+	if (lights.size() >= 2) {
+		vec4 light = STransform * vec4(lights[1]->place);
+		Drawline(vec4t3(light), vec3(256, 256, -BIG_NUMBER), vec3(1, 0, 0));
+	}
 
 	// draw bounding box
 	if (!bbox) return;
@@ -567,7 +526,7 @@ void Renderer::ClearDepthBuffer() {
 	//clean bufer
 	for (int i = 0; i < m_width; i++)
 		for (int j = 0; j < m_height; j++) {
-			m_zbuffer[INDEXZ(m_width, i, j)] = BIG_NUMBER;
+			m_zbuffer[INDEXZ(m_width, i, j)] = -BIG_NUMBER;
 		}
 }
 

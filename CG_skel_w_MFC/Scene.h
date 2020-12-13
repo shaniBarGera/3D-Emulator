@@ -12,9 +12,6 @@ protected:
 	void virtual draw()=0;
 };
 
-
-
-
 class Camera {
 	
 public:
@@ -25,7 +22,6 @@ public:
 	vec3 at;
 	vec3 up;
 	bool rendered = false;
-	
 
 	Camera();
 	Camera(vec3 eye, vec3 at, vec3 up);
@@ -43,23 +39,20 @@ public:
 };
 
 class Scene {
-
-	
-	
 	Renderer *m_renderer;
 
 public:
 	vector<Light*> lights;
 	vector<Model*> models;
 	vector<Camera*> cameras;
-	int activeModel;
-	int activeLight;
-	int activeCamera;
-	GLfloat step_move;
-	GLfloat step_scale;
-	GLfloat step_rotate;
-	GLfloat step_cam;
-	int shade_types = 0; //0-phong, 1-gouard,2-flat.
+	int activeModel = -1;
+	int activeLight = 0;
+	int activeCamera = 0;
+	GLfloat step_move = 0.01;
+	GLfloat step_scale = 0.1;
+	GLfloat step_rotate = 10;
+	GLfloat step_cam = 1;
+	GLfloat step_surface = 0.1;
 	
 	Scene();
 	Scene(Renderer* renderer);
@@ -91,14 +84,19 @@ public:
 	void test();
 
 	void clip(vec3 p1, vec3 p2);
-	void setSurface(GLfloat emissive, GLfloat diffuse, GLfloat specular, GLfloat alpha);
 	void addLight();
 	void deactivateLight();
 	void colorLight(vec3 color);
-	void positionLight(vec3 position);
+	void positionLight(vec3 place);
 	void orientLight(char cord);
 	void setLightType(string type);
-	void shade(string type);
+	void shade(char type);
 	void dimm();
+	void bright();
+	void blur();
 	void bloom();
+	void shine(char dir);
+	void diffuse(char dir);
+	void emissive(char dir);
+	void specular(char dir);
 };

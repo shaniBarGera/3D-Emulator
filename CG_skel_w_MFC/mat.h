@@ -322,7 +322,18 @@ mat3 matrixCompMult( const mat3& A, const mat3& B ) {
 
 inline
 mat3 transpose( const mat3& A ) {
-    return mat3( A[0][0], A[1][0], A[2][0], A[0][1], A[1][1], A[2][1], A[0][2], A[1][2], A[2][2]); /*BUG*/
+    return mat3( A[0][0], A[0][1], A[0][2], A[1][0], A[1][1], A[1][2], A[2][0], A[2][1], A[2][2]); /*BUG*/
+}
+
+inline
+void print(const mat3& m) {
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            printf("%f ", m[i][j]);
+        }
+        printf("\n");
+    }
+    printf("\n");
 }
 
 //----------------------------------------------------------------------------

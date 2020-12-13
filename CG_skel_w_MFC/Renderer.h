@@ -6,17 +6,14 @@
 #include "GL/glew.h"
 #include <cstring>
 //#include "Scene.h"
-#define BIG_NUMBER 10000
-
 
 class Light {
 public:
-	vec3 place = vec3(2,0,0);
+	vec3 place = vec3(1,1,1);
 	vec3 color = (0.5,0.5,0.5);
 	GLfloat intensity = 0.5;
 	bool active = true;
-	vec3 dir = vec3(1,0,0);
-	std::string type = "ambient";
+	std::string type = "point";
 	Light() = default;
 };
 
@@ -53,13 +50,14 @@ class Renderer
 public:
 	int m_width, m_height;
 	vector<Light*> lights;
+
 	bool show_normalsF = false;
 	bool show_normalsV = false;
 	bool uniform = true;
-	int shade_type = 0;
 
 	vec3 pmin = vec3(-BIG_NUMBER, -BIG_NUMBER, -BIG_NUMBER);
 	vec3 pmax = vec3(BIG_NUMBER, BIG_NUMBER, BIG_NUMBER);
+	char shade = 'f';
 
 	Renderer();
 	Renderer(int width, int height);
@@ -77,17 +75,11 @@ public:
 	void ClearDepthBuffer();
 	void SetDemoBuffer();
 	void reshape(int w, int h);
-	bool setPixelOn(int x, int y, vec3 p1, vec3 p2, vec3 p3, vec3 color, bool shade = false, vec3 eye = vec3(0, 0, 3),
-		vec3 normal1=vec3(0,0,0), vec3 normal2 = vec3(0, 0, 0), vec3 normal3 = vec3(0, 0, 0), vec3 normal_f = vec3(0, 0, 0),
-		vec4 fraction = vec4(1,1,1,1));
+	bool setPixelOn(vec3 pixel, vec3 color);
 	void SetFlags(bool bbox, bool show_normalsV, bool show_normalsF, bool uniform);
-	//void FillPolygon(vec3 p1, vec3 p2, vec3 p3, char color, vector<vector<int>>* curr_poly);
-	void FillPolygon(vec3 color, vec3 p1, vec3 p2, vec3 p3, vec3 normal1, vec3 normal2, vec3 normal3, vec3 normal_f, vec4 fraction, vec3 eye);
-	void put_z(int x, int y, GLfloat Z);
-	GLfloat get_z(int x, int y);
-	GLfloat pointLight(Light* light, vec3 pixel, vec3 normal, vec4 fraction, vec3 eye);
+	void FillPolygon(vec3 color, vec3 p1, vec3 p2, vec3 p3, vec3 normal1, vec3 normal2, vec3 normal3, vec3 normal_f, vec4 fraction, vec3 eye, mat3 world_ps);
+	GLfloat pointLight(Light* light, vec3 pixel, vec3 normal, vec4 fraction, vec3 eye, vec3 screen_pixel);
 	GLfloat parallelLight(Light* light, vec4 fraction, vec3 eye, vec3 pixel, vec3 normal);
 	GLfloat ambientLight(Light* l, vec4 fraction);
 	void drawSkeleton(const vector<vec3>* vertices);
-	
 };

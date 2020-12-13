@@ -119,10 +119,8 @@ MeshModel::~MeshModel(void)
 }
 
 int MeshModel::found_v_index(vec3 v) {
-	for (int i = 0; i < vertices.size();i++) {
-		//cout << vertices[i]<<"\n";
-		//cout << v << "\n";
-		if (vertices[i].x == v.x && vertices[i].y == v.y && vertices[i].z == v.z) return i;
+	for (int i = 0; i < vertices.size(); i++) {
+		if (vertices[i] == v) return i;
 	}
 	return -1;
 }
@@ -169,16 +167,10 @@ void MeshModel::loadFile(string fileName)
 			cout << "Found unknown line Type \"" << lineType << "\"";
 		}
 	}
-	//Vertex_positions is an array of vec3. Every three elements define a triangle in 3D.
-	//If the face part of the obj is
-	//f 1 2 3
-	//f 1 3 4
-	//Then vertex_positions should contain:
-	//vertex_positions={v1,v2,v3,v1,v3,v4}
-
+	
 	// init v_normal
 	vector<vector<vec3>> v_normal;
-	for (int i = 0;i < vertices.size();i++) {
+	for (int i = 0; i < vertices.size(); i++) {
 		vec3 a = vec3(0, 0, 0);
 		vector<vec3> b;
 		b.push_back(a);
@@ -202,7 +194,7 @@ void MeshModel::loadFile(string fileName)
 		{
 			vertex_positions.push_back(vertices[it->v[i]-1]); //CHANGE
 			vertex_normal.push_back(normals[it->vn[i] - 1]);
-			v_normal[it->v[i] - 1].push_back(normals[it->vn[i] - 1]);			
+			v_normal[it->v[i] - 1].push_back(normals[it->vn[i] - 1]);
 		}
 	}
 	//cout << v_normal.size()<<"\n";
