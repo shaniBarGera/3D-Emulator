@@ -56,18 +56,19 @@ void Renderer::SetDemoBuffer()
 }
 
 GLfloat Renderer::pointLight(Light* light, vec3 pixel, vec3 normal, vec4 fraction, vec3 eye, vec3 screen_pixel) {
-	vec3 l = light->place - pixel;
-	l = normalize(l);
+	
+	GLfloat Ia = light->intensity * fraction[0]; //Ka
+	vec3 l = normalize(light->place - pixel);
 	normal = normalize(normal);
 	GLfloat cos_theta = dot(l, normal);
 
-	if (screen_pixel.x == 256 && screen_pixel.y == 256) {
-		printf("POINT LIGHT: place:(%f,%f,%f) pixel:(%f,%f,%f) l:(%f,%f,%f) normal:(%f,%f,%f) costheta:%f\n",
-			light->place.x, light->place.y, light->place.z,
-			pixel.x, pixel.y, pixel.z,
-			l.x, l.y, l.z,
-			normal.x, normal.y, normal.z, cos_theta);
-	}
+	/*if (screen_pixel.x == 256 && screen_pixel.y == 256) {
+		//printf("POINT LIGHT: place:(%f,%f,%f) pixel:(%f,%f,%f) l:(%f,%f,%f) normal:(%f,%f,%f) costheta:%f\n",
+		light->place.x, light->place.y, light->place.z,
+		pixel.x, pixel.y, pixel.z,
+		l.x, l.y, l.z,
+		normal.x, normal.y, normal.z, cos_theta);
+	}*/
 
 	GLfloat Id = (cos_theta < 0) ? 0 : light->intensity * cos_theta * fraction[1]; //Kd
 	vec3 v = eye - pixel;
@@ -76,22 +77,21 @@ GLfloat Renderer::pointLight(Light* light, vec3 pixel, vec3 normal, vec4 fractio
 	r = normalize(r);
 	GLfloat Is = light->intensity * fraction[2] * powf(dot(v, r), fraction[3]);
 
-	return Id + Is;
+	return Ia + Id + Is;
 }
 
 GLfloat Renderer::parallelLight(Light* light, vec4 fraction, vec3 eye, vec3 pixel, vec3 normal){
-	vec3 l = light->dir;
-	l = normalize(l);
+	vec3 l = normalize(light->place);
 	normal = normalize(normal);
-	//GLfloat Ia = light->intensity.x * fraction[0]; //Ka
+	GLfloat Ia = light->intensity * fraction[0]; //Ka
 	GLfloat cos_theta = dot(l, normal);
 	GLfloat Id = (cos_theta < 0)? 0 : light->intensity *  cos_theta * fraction[1]; //Kd
 	vec3 v = eye - pixel;
 	v = normalize(v);
-	vec3 r = l - 2 * dot(light->dir, normal) * normal;
+	vec3 r = l - 2 * dot(light->place, normal) * normal;
 	r = normalize(r);
 	GLfloat Is = light->intensity * fraction[2] * powf(dot(v, r), fraction[3]);
-	return Id + Is;
+	return Ia + Id + Is;
 }
 
 GLfloat Renderer::ambientLight(Light* l, vec4 fraction){
@@ -136,19 +136,22 @@ bool Renderer::setPixelOn(int x, int y, vec3 p1, vec3 p2, vec3 p3, vec3 color,
 		m_zbuffer[INDEXZ(m_width, x, y)] = world_pixel.z;
 
 
-		if (x == 256 && y == 256) {
+		/*if (x == 256 && y == 256) {
 			printf("SET PIXEL ON: pixel:(%f,%f,%f)\n", world_pixel.x, world_pixel.y, world_pixel.z);
-		}
+		}*/
 
 		GLfloat I = 0;
 		for (int i = 0; i < lights.size(); i++) {
+			GLfloat curr_I;
 			if (lights[i]->type == "point")
-				I += pointLight(lights[i], world_pixel, normal, fraction, eye, vec3(x, y, world_pixel.z));
+				curr_I = pointLight(lights[i], world_pixel, normal, fraction, eye, vec3(x, y, world_pixel.z));
 			else if (lights[i]->type == "parallel")
-				I += parallelLight(lights[i], fraction, eye, world_pixel, normal);
+				curr_I = parallelLight(lights[i], fraction, eye, world_pixel, normal);
 			else if (lights[i]->type == "ambient")
-				I += ambientLight(lights[i], fraction);
-			curr_color += lights[i]->color;
+				curr_I = ambientLight(lights[i], fraction);
+			curr_I = (curr_I < 0) ? 0 : curr_I;
+			curr_color += lights[i]->color * curr_I;
+			I += curr_I;
 		}
 		curr_color /= lights.size();
 		curr_color *= I;
@@ -263,7 +266,7 @@ void Renderer::FillPolygon(vec3 color, vec3 p1, vec3 p2, vec3 p3, vec3 normal, v
 }
 
 void Renderer::drawSkeleton(const vector<vec3>* vertices) {
-	printf("DRAW TRIANGLE\n");
+	//printf("DRAW TRIANGLE\n");
 
 	// draw object
 	for (int i = 0; i < vertices->size(); i += 3)
@@ -283,7 +286,7 @@ void Renderer::drawSkeleton(const vector<vec3>* vertices) {
 
 
 void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertices, vec3 color,const vector<vec3>* normals, const vector<vec3>* vertices_bbox, vec4 fraction, vec3 pos_camera) {
-	printf("DRAW TRIANGLE\n");
+	//printf("DRAW TRIANGLE\n");
 
 	// add cam renderer
 	for (int j = 0; j < eye->size(); j++) {

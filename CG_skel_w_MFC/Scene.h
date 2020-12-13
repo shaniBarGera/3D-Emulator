@@ -58,6 +58,7 @@ public:
 	GLfloat step_scale;
 	GLfloat step_rotate;
 	GLfloat step_cam;
+	GLfloat step_surface;
 	
 	Scene();
 	Scene(Renderer* renderer);
@@ -89,14 +90,17 @@ public:
 	void test();
 
 	void clip(vec3 p1, vec3 p2);
-	void setSurface(GLfloat emissive, GLfloat diffuse, GLfloat specular, GLfloat alpha);
 	void addLight();
 	void deactivateLight();
 	void colorLight(vec3 color);
-	void positionLight(vec3 position);
+	void positionLight(vec3 place);
 	void orientLight(char cord);
 	void setLightType(string type);
 	void shade(string type);
 	void dimm();
 	void bloom();
+	void shine(char dir);
+	void diffuse(char dir);
+	void emissive(char dir);
+	void specular(char dir);
 };

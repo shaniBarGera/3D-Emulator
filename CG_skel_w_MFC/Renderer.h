@@ -9,11 +9,10 @@
 
 class Light {
 public:
-	vec3 place = vec3(2,0,0);
+	vec3 place = vec3(1,0,0);
 	vec3 color = (0.5,0.5,0.5);
 	GLfloat intensity = 0.5;
 	bool active = true;
-	vec3 dir = vec3(1,0,0);
 	std::string type = "ambient";
 	Light() = default;
 };

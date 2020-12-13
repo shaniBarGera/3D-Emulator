@@ -165,29 +165,6 @@ void keyboard(unsigned char key, int x, int y)
 		scene->zoomOut();
 		break;
 
-	case 'x':
-		scene->rotate('x');
-		break;
-	case 'y':
-		scene->rotate('y');
-		//control = 'm';
-		break;
-	case 'z':
-		scene->rotate('z');
-		//control = 'm';
-		break;
-	case 'X':
-		scene->rotate('X');
-		//control = 'm';
-		break;
-	case 'Y':
-		scene->rotate('Y');
-		//control = 'm';
-		break;
-	case 'Z':
-		scene->rotate('Z');
-		//control = 'm';
-		break;
 
 	case '[':
 		scene->dimm();
@@ -197,6 +174,42 @@ void keyboard(unsigned char key, int x, int y)
 		scene->bloom();
 		//control = 'l';
 		break;
+
+
+	case 'a': // alpha shiness
+		scene->shine('+');
+		break;
+	case 'A': // alpha
+		scene->shine('-');
+		break;
+	case 'd': // diffuse
+		scene->diffuse('+');
+		break;
+	case 'D': // diffuse
+		scene->diffuse('-');
+		break;
+	case 's': // specular
+		scene->specular('+');
+		break;
+	case 'S': // specular
+		scene->specular('-');
+		break;
+	case 'e': // emissive
+		scene->emissive('+');
+		break;
+	case 'E': // emissive
+		scene->emissive('-');
+		break;
+	}
+
+	if (key == 'x' ||
+		key == 'X' ||
+		key == 'y' ||
+		key == 'Y' ||
+		key == 'z' ||
+		key == 'Z') {
+		if (control == 'm') scene->rotate(key);
+		else if (control == 'l') scene->orientLight(key);
 	}
 
 	glutPostRedisplay();
@@ -232,7 +245,7 @@ void catchKey(int key, int x, int y) {
 	else if (control == 'c')
 		scene->camMove(dir);
 	else if (control == 'l')
-		scene->orientLight(dir);
+		scene->positionLight(dir);
 	
 
 	glutPostRedisplay();
@@ -371,13 +384,6 @@ void modelMenu(int id) {
 	case MODEL_BBOX:
 		scene->bbox();
 		break;
-	case MODEL_SURFACE:
-		emissive = stof(dialogBox("Model Emissive Coefficient"));
-		diffuse = stof(dialogBox("Model Diffuse Coefficient"));
-		specular = stof(dialogBox("Model Specular Coefficient"));
-		alpha = stof(dialogBox("Alpha"));
-		scene->setSurface(emissive, diffuse, specular, alpha);
-		break;
 	}
 }
 
@@ -477,10 +483,6 @@ void lightMenu(int id) {
 	case LIGHT_COLOR:
 		ans = dialogBoxVec("Set Light Color");
 		scene->colorLight(ans);
-		break;
-	case LIGHT_POSITION:
-		ans = dialogBoxVec("Set Light Position");
-		scene->positionLight(ans);
 		break;
 	}
 }
@@ -608,6 +610,8 @@ void initMenu()
 	glutAddMenuEntry("Phong", SHADE_PHONG);
 
 	const int menuLight = glutCreateMenu(lightMenu);
+	glutAddMenuEntry("Set Active", LIGHT_ACTIVE);
+	glutAddMenuEntry("Activate", LIGHT_CLEAR);
 	glutAddMenuEntry("Color", LIGHT_COLOR);
 	glutAddMenuEntry("Position", LIGHT_POSITION);
 	glutAddSubMenu("Type", menuLightType);
