@@ -33,7 +33,7 @@ public:
 	mat4 m_translate;
 	mat4 m_rotate;
 
-	vec4 fraction = vec4(0.5,0.5,0.5, 1); // surface coefficient. Ka, Kd, Ks, alpha
+	vec4 fraction = vec4(0.5,0.5,0,5); // surface coefficient. Ka, Kd, Ks, alpha
 
 
 

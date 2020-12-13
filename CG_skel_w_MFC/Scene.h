@@ -25,6 +25,7 @@ public:
 	vec3 at;
 	vec3 up;
 	bool rendered = false;
+	
 
 	Camera();
 	Camera(vec3 eye, vec3 at, vec3 up);
@@ -58,7 +59,7 @@ public:
 	GLfloat step_scale;
 	GLfloat step_rotate;
 	GLfloat step_cam;
-	GLfloat step_surface;
+	int shade_types = 0; //0-phong, 1-gouard,2-flat.
 	
 	Scene();
 	Scene(Renderer* renderer);
@@ -90,17 +91,14 @@ public:
 	void test();
 
 	void clip(vec3 p1, vec3 p2);
+	void setSurface(GLfloat emissive, GLfloat diffuse, GLfloat specular, GLfloat alpha);
 	void addLight();
 	void deactivateLight();
 	void colorLight(vec3 color);
-	void positionLight(vec3 place);
+	void positionLight(vec3 position);
 	void orientLight(char cord);
 	void setLightType(string type);
 	void shade(string type);
 	void dimm();
 	void bloom();
-	void shine(char dir);
-	void diffuse(char dir);
-	void emissive(char dir);
-	void specular(char dir);
 };

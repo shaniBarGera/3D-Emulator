@@ -20,7 +20,6 @@ Scene::Scene() {
 	step_rotate = 10;
 	step_scale = 1;
 	step_cam = 1;
-	step_surface = 0.1;
 }
 
 Scene::Scene(Renderer* renderer) {
@@ -36,7 +35,6 @@ Scene::Scene(Renderer* renderer) {
 	step_rotate = 10;
 	step_scale = 0.1;
 	step_cam = 1;
-	step_surface = 0.1;
 }
 
 Scene::~Scene() {
@@ -104,6 +102,7 @@ void Scene::draw()
 	// 2. Tell all models to draw themselves
 	Camera* cam = cameras[activeCamera];
 	m_renderer->lights = lights;
+	m_renderer->shade_type = this->shade_types;
 	for (size_t i = 0; i < models.size(); ++i) {
 		 MeshModel* model = (MeshModel*)models[i];
 		 //m_renderer->SetDemoBuffer();
@@ -477,29 +476,12 @@ void Camera::Frustum(const float left, const float right,
 /*                              LIGHT                                 */
 /*--------------------------------------------------------------------*/
 
-void Scene::shine(char dir) {
+void Scene::setSurface(GLfloat emissive, GLfloat diffuse, GLfloat specular, GLfloat alpha) {
+	// set active model surface coefficient
+	printf("SET SURFACE\n");
 	MeshModel* model = (MeshModel*)models[activeModel];
-	if(dir == '+') model->fraction.w += 1;
-	else if (dir == '-' && model->fraction.w > 0) model->fraction.w -= 1;
-	printf("SHINE: %f\n", model->fraction.w);
-}
+	model->fraction = vec4(emissive, diffuse, specular, alpha);
 
-void Scene::diffuse(char dir) {
-	MeshModel* model = (MeshModel*)models[activeModel];
-	if (dir == '+' && model->fraction.y < 1) model->fraction.y += step_surface;
-	else if (dir == '-' && model->fraction.y > 0) model->fraction.y -= step_surface;
-}
-
-void Scene::emissive(char dir) {
-	MeshModel* model = (MeshModel*)models[activeModel];
-	if (dir == '+' && model->fraction.x < 1) model->fraction.x += step_surface;
-	else if (dir == '-' && model->fraction.x > 0) model->fraction.x -= step_surface;
-}
-
-void Scene::specular(char dir) {
-	MeshModel* model = (MeshModel*)models[activeModel];
-	if (dir == '+' && model->fraction.z < 1) model->fraction.z += step_surface;
-	else if (dir == '-' && model->fraction.z > 0) model->fraction.z -= step_surface;
 }
 
 void Scene::addLight() {
@@ -526,40 +508,37 @@ void Scene::colorLight(vec3 color) {
 
 }
 
-void Scene::positionLight(vec3 place) {
+void Scene::positionLight(vec3 position) {
 	// position active light
 	printf("POSITION LIGHT\n");
 	Light* light = lights[activeLight];
-	light->place = place;
+	light->place = position;
 }
 
 void Scene::orientLight(char cord) {
 	// orient active light
 	printf("ORIENT LIGHT\n");
 	Light* light = lights[activeLight];
-	mat4 temp;
 	GLfloat curr_step = step_rotate;
-	switch(cord){
-		case 'x':
-			temp = RotateX(curr_step);
-			break;
-		case 'y':
-			temp = RotateY(curr_step);
-			break;
-		case 'z':
-			temp = RotateZ(curr_step);
-			break;
-		case 'X':
-			temp = RotateX(-curr_step);
-			break;
-		case 'Y':
-			temp = RotateY(-curr_step);
-			break;
-		case 'Z':
-			temp = RotateZ(-curr_step);
-			break;
+	switch (cord) {
+	case 'f':
+		light->dir.x += curr_step;
+		break;
+	case 'l':
+		light->dir.y += curr_step;
+		break;
+	case 'u':
+		light->dir.z += curr_step;
+		break;
+	case 'n':
+		light->dir.x -= curr_step;
+		break;
+	case 'r':
+		light->dir.y -= curr_step;
+	case 'd':
+		light->dir.z -= curr_step;
+		break;
 	}
-	light->place = vec4t3(temp * vec4(light->place));
 }
 
 void Scene::setLightType(string type) {
@@ -567,12 +546,14 @@ void Scene::setLightType(string type) {
 	printf("SET LIGHT TYPE\n");
 	Light* light = lights[activeLight];
 	light->type = type;
-	if (type == "parallel") light->place = vec3(1, 0, 0);
 }
 
 void Scene::shade(string type) {
 	printf("SHADE\n");
 	// TODO: phong etc
+	if (type == "flat") shade_types = 2;
+	else if (type == "gour") shade_types = 1;
+	else shade_types = 0;
 }
 
 void Scene::dimm() {
