@@ -102,15 +102,17 @@ void Scene::draw()
 	// 2. Tell all models to draw themselves
 	Camera* cam = cameras[activeCamera];
 	m_renderer->lights = lights;
-	m_renderer->shade_type = this->shade_types;
+	
 	for (size_t i = 0; i < models.size(); ++i) {
 		 MeshModel* model = (MeshModel*)models[i];
 		 //m_renderer->SetDemoBuffer();
+		 m_renderer->shade_type = this->shade_types;
 		 m_renderer->SetScreenTransform();
 		 m_renderer->SetCameraMatrices(cam->cTransform, cam->projection);
 		 m_renderer->SetObjectMatrices(model->m_translate, model->m_transform, model->_world_transform, model->_normal_transform, model->_normal_world_transform);
 		 m_renderer->SetFlags(model->bbox, model->show_normalsV, model->show_normalsF, model->uniform);
-		 m_renderer->DrawTriangles(&eyes, &model->vertex_positions, model->color, &model->vertex_normal, &model->vertex_bbox, model->fraction, cam->eye);
+		 m_renderer->DrawTriangles(&eyes, &model->vertex_positions, model->color,
+			 &model->vertex_normal, &model->vertex_bbox, model->fraction, cam->eye, model->v_normal_position);
 	}
 	if (models.size() > 0) {
 		m_renderer->SwapBuffers();

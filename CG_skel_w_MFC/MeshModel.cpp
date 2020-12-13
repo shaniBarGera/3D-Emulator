@@ -118,6 +118,15 @@ MeshModel::~MeshModel(void)
 {
 }
 
+int MeshModel::found_v_index(vec3 v) {
+	for (int i = 0; i < vertices.size();i++) {
+		//cout << vertices[i]<<"\n";
+		//cout << v << "\n";
+		if (vertices[i].x == v.x && vertices[i].y == v.y && vertices[i].z == v.z) return i;
+	}
+	return -1;
+}
+
 void MeshModel::loadFile(string fileName)
 {
 	ifstream ifile(fileName.c_str());
@@ -167,6 +176,24 @@ void MeshModel::loadFile(string fileName)
 	//Then vertex_positions should contain:
 	//vertex_positions={v1,v2,v3,v1,v3,v4}
 
+	// init v_normal
+	vector<vector<vec3>> v_normal;
+	for (int i = 0;i < vertices.size();i++) {
+		vec3 a = vec3(0, 0, 0);
+		vector<vec3> b;
+		b.push_back(a);
+		//cout << b[0];
+		v_normal.push_back(b);
+	}
+	// init v_normal_position
+	for (int i = 0;i < 3*faces.size();i++) {
+		vec3 a = vec3(0,0,0);
+		vector<vec3> b;
+		b.push_back(a);
+		//cout << b[0];
+		v_normal_position.push_back(b);
+	}
+	//cout << v_normal_position.size()<<"\n";
 	// iterate through all stored faces and create triangles
 	int k = 0;
 	for (vector<FaceIdcs>::iterator it = faces.begin(); it != faces.end(); ++it)
@@ -175,10 +202,33 @@ void MeshModel::loadFile(string fileName)
 		{
 			vertex_positions.push_back(vertices[it->v[i]-1]); //CHANGE
 			vertex_normal.push_back(normals[it->vn[i] - 1]);
-
-			
+			v_normal[it->v[i] - 1].push_back(normals[it->vn[i] - 1]);			
 		}
 	}
+	//cout << v_normal.size()<<"\n";
+	for (int j =0 ; j < vertices.size(); ++j) {
+		int counter = 0;
+		vec3 temp = vec3(0, 0, 0);
+		int temp_size = v_normal[j].size();
+		for (int i = 0;i < temp_size; i++) {
+			counter++;
+			temp += v_normal[j][i];
+			
+		}
+		for (int i = 0;i < temp_size;i++) {
+			v_normal[j].pop_back();
+		}
+		v_normal[j].push_back(temp / counter);
+		//cout << v_normal[j][0];
+	}
+	for (int i = 0; i < vertex_positions.size();i++) {
+		vec3 temp_normal = v_normal[found_v_index(vertex_positions[i])][0];
+		//cout << temp_normal;
+		v_normal_position[i].pop_back();
+		v_normal_position[i].push_back(temp_normal);
+	}
+	//cout << v_normal.size() << "\n";
+	//cout << vertices.size() << "\n";
 
 	pmin.x = get_min_x(&vertex_positions);
 	pmin.y = get_min_y(&vertex_positions);

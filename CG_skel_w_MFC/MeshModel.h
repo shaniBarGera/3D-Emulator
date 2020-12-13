@@ -46,8 +46,9 @@ public:
 	vector<vec3> vertices;
 	vector<vec3> vertex_bbox;
 
-	vector<vec3> v_normal;
+	vector<vector<vec3>> v_normal_position;
 	vector<vec3> f_normal;
+	int found_v_index(vec3 v);
 	
 };
 

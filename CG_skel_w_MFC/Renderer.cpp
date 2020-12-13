@@ -120,7 +120,8 @@ vec3 getweights(int x, int y, vec3 p1, vec3 p2, vec3 p3) {
 	return res;
 }
 
-bool Renderer::setPixelOn(int x, int y, vec3 p1, vec3 p2, vec3 p3, vec3 color, bool shade, vec3 eye, vec3 normal, vec4 fraction) {
+bool Renderer::setPixelOn(int x, int y, vec3 p1, vec3 p2, vec3 p3, vec3 color, bool shade,
+	vec3 eye, vec3 normal1, vec3 normal2, vec3 normal3, vec3 normal_f, vec4 fraction) {
 	//printf("SET PIXEL ON %d %d\n", x, y);
 	if (x < 0 || x >= m_width || y < 0 || y >= m_width) { 
 		return false; 
@@ -136,12 +137,21 @@ bool Renderer::setPixelOn(int x, int y, vec3 p1, vec3 p2, vec3 p3, vec3 color, b
 	// color
 	GLfloat I = 0;
 	vec3 curr_color = color;
-	if (shade==1) {
+	if (shade) {
 		for (int i = 0; i < lights.size(); i++) {
-			if (lights[i]->type == "point")
+			if (lights[i]->type == "point") {
+				vec3 weights = getweights(x, y, p1, p2, p3);
+				vec3 normal = weights.x * normal1 + weights.y * normal2 + weights.z * normal3;
+				if (x == 0 && y == 0) {
+					cout << normal << "\n";
+				}
 				I += pointLight(lights[i], vec3(x, y, z), normal, fraction, eye);
-			else if (lights[i]->type == "parallel")
+			}
+			else if (lights[i]->type == "parallel") {
+				vec3 weights = getweights(x, y, p1, p2, p3);
+				vec3 normal = weights.x * normal1 + weights.y * normal2 + weights.z * normal3;
 				I += parallelLight(lights[i], fraction, eye, vec3(x, y, z), normal);
+			}
 			else if (lights[i]->type == "ambient")
 				I += ambientLight(lights[i], fraction);
 			curr_color += lights[i]->color;
@@ -235,7 +245,7 @@ void Renderer::Drawline(vec3 p1, vec3 p2, vec3 color, bool save_poly) {
 }
 
 
-void Renderer::FillPolygon(vec3 color, vec3 p1, vec3 p2, vec3 p3, vec3 normal, vec4 fraction, vec3 eye) {
+void Renderer::FillPolygon(vec3 color, vec3 p1, vec3 p2, vec3 p3, vec3 normal1, vec3 normal2, vec3 normal3, vec3 normal_f, vec4 fraction, vec3 eye) {
 	//printf("FILL POLY normal(%f,%f,%f) eye(%f,%f,%f)\n", normal.x, normal.y, normal.z, eye.x, eye.y, eye.z);
 
 	Drawline(p1, p2, color, true);
@@ -259,15 +269,15 @@ void Renderer::FillPolygon(vec3 color, vec3 p1, vec3 p2, vec3 p3, vec3 normal, v
 				GLfloat I1 = 0; GLfloat I2 = 0; GLfloat I3 = 0; GLfloat I = 0;
 				for (int i = 0; i < lights.size(); i++) {
 					if (lights[i]->type == "point") {
-						I1 += pointLight(lights[i], vec3(p1.x, p1.y, p1.z), normal, fraction, eye);
-						I2 += pointLight(lights[i], vec3(p2.x, p2.y, p2.z), normal, fraction, eye);
-						I3 += pointLight(lights[i], vec3(p3.x, p3.y, p3.z), normal, fraction, eye);
+						I1 += pointLight(lights[i], vec3(p1.x, p1.y, p1.z), normal1, fraction, eye);
+						I2 += pointLight(lights[i], vec3(p2.x, p2.y, p2.z), normal2, fraction, eye);
+						I3 += pointLight(lights[i], vec3(p3.x, p3.y, p3.z), normal3, fraction, eye);
 						I += weights.x * I1 + weights.y * I2 + weights.z * I3;
 					}
 					else if (lights[i]->type == "parallel") {
-						I1 += parallelLight(lights[i], fraction, eye, vec3(p1.x, p1.y, p1.z), normal);
-						I2 += parallelLight(lights[i], fraction, eye, vec3(p2.x, p2.y, p2.z), normal);
-						I3 += parallelLight(lights[i], fraction, eye, vec3(p3.x, p3.y, p3.z), normal);
+						I1 += parallelLight(lights[i], fraction, eye, vec3(p1.x, p1.y, p1.z), normal1);
+						I2 += parallelLight(lights[i], fraction, eye, vec3(p2.x, p2.y, p2.z), normal2);
+						I3 += parallelLight(lights[i], fraction, eye, vec3(p3.x, p3.y, p3.z), normal3);
 						I += weights.x * I1 + weights.y * I2 + weights.z * I3;
 					}
 					else if (lights[i]->type == "ambient")
@@ -279,22 +289,22 @@ void Renderer::FillPolygon(vec3 color, vec3 p1, vec3 p2, vec3 p3, vec3 normal, v
 				}
 				curr_color /= lights.size();
 				curr_color *= I;
-				setPixelOn(x, y, p1, p2, p3, curr_color, false, eye, normal, fraction);
+				setPixelOn(x, y, p1, p2, p3, curr_color, false, eye, normal1, normal2, normal3, normal_f, fraction);
 			}
 			else if (shade_type==2) {
 				vec3 curr_color = color;
 				GLfloat I1 = 0; GLfloat I2 = 0; GLfloat I3 = 0; GLfloat I = 0;
 				for (int i = 0; i < lights.size(); i++) {
 					if (lights[i]->type == "point") {
-						I1 += pointLight(lights[i], vec3(p1.x, p1.y, p1.z), normal, fraction, eye);
-						I2 += pointLight(lights[i], vec3(p2.x, p2.y, p2.z), normal, fraction, eye);
-						I3 += pointLight(lights[i], vec3(p3.x, p3.y, p3.z), normal, fraction, eye);
+						I1 += pointLight(lights[i], vec3(p1.x, p1.y, p1.z), normal_f, fraction, eye);
+						I2 += pointLight(lights[i], vec3(p2.x, p2.y, p2.z), normal_f, fraction, eye);
+						I3 += pointLight(lights[i], vec3(p3.x, p3.y, p3.z), normal_f, fraction, eye);
 						I += (I1 + I2 + I3) / 3;
 					}
 					else if (lights[i]->type == "parallel") {
-						I1 += parallelLight(lights[i], fraction, eye, vec3(p1.x, p1.y, p1.z), normal);
-						I2 += parallelLight(lights[i], fraction, eye, vec3(p2.x, p2.y, p2.z), normal);
-						I3 += parallelLight(lights[i], fraction, eye, vec3(p3.x, p3.y, p3.z), normal);
+						I1 += parallelLight(lights[i], fraction, eye, vec3(p1.x, p1.y, p1.z), normal_f);
+						I2 += parallelLight(lights[i], fraction, eye, vec3(p2.x, p2.y, p2.z), normal_f);
+						I3 += parallelLight(lights[i], fraction, eye, vec3(p3.x, p3.y, p3.z), normal_f);
 						I += (I1 + I2 + I3) / 3;
 					}
 					else if (lights[i]->type == "ambient")
@@ -306,9 +316,9 @@ void Renderer::FillPolygon(vec3 color, vec3 p1, vec3 p2, vec3 p3, vec3 normal, v
 				}
 				curr_color /= lights.size();
 				curr_color *= I;
-				setPixelOn(x, y, p1, p2, p3, curr_color, false, eye, normal, fraction);
+				setPixelOn(x, y, p1, p2, p3, curr_color, false, eye, normal1, normal2, normal3, normal_f, fraction);
 			}
-			else setPixelOn(x, y, p1, p2, p3, color, true, eye, normal, fraction);
+			else setPixelOn(x, y, p1, p2, p3, color, true, eye, normal1, normal2, normal3, normal_f, fraction);
 		}
 	
 
@@ -338,9 +348,12 @@ void Renderer::drawSkeleton(const vector<vec3>* vertices) {
 }
 
 
-void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertices, vec3 color,const vector<vec3>* normals, const vector<vec3>* vertices_bbox, vec4 fraction, vec3 pos_camera) {
+void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertices,
+	vec3 color,const vector<vec3>* normals, const vector<vec3>* vertices_bbox, vec4 fraction, 
+	vec3 pos_camera, vector<vector<vec3>> avg_normals) {
 	printf("DRAW TRIANGLE\n");
-
+	//cout << avg_normals.size() << "\n";
+	//cout << vertices->size() << "\n";
 	// add cam renderer
 	for (int j = 0; j < eye->size(); j++) {
 		vec4 temp = vec4((*eye)[j]);
@@ -358,45 +371,63 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 
 
 	// draw object
+	
 	for (int i = 0; i < vertices->size(); i+=3)
 	{
 		vec3 p[3];
 		vec4 center(0);
 		vec4 f_normal;
-
+		vec3 norm_per_v[3];
 		for (int j = 0; j < 3; j++) {
 			center += vec4((*vertices)[i + j]);
 			vec4 temp = WTransform * MTransform * vec4((*vertices)[i + j]);
 			vec4 normal = NWTransform * NTransform * vec4((*normals)[i + j]) * 0.2;
+			
+			vec3 avg_n = avg_normals[j+i][0];
+			vec4 avg_normal = NWTransform * NTransform * vec4(avg_n);
+			
+			//avg_normal.w = 0;
 			normal.w = 0;
 			
 			if (j == 0) {
 				f_normal = normal;
 			}
-			
+
+			//avg_normal += temp;
 			normal += temp;
 			temp = STransform * Projection * CTransform * temp;
 
+			avg_normal = STransform * Projection * CTransform * avg_normal;
 			normal = STransform * Projection * CTransform * normal;
 			vec3 n = vec4t3(normal);
+			vec3 avg_norm = vec4t3(avg_normal);
 
 			p[j] = vec4t3(temp);
 
 			if (show_normalsV) {
 				Drawline(p[j], n, vec3(0,1,0));
+				//Drawline(p[j], avg_norm, vec3(0, 1, 1));
 			}
+
+			norm_per_v[j]=normalize(avg_norm);
 		}
+		//cout << norm_per_v.size();
+		//avg normal transform
 		
+
 		// draw normals
 		center /= 3;
 		center = WTransform * MTransform * center;
 		vec4 normal_origin = f_normal; // normal that goes out from origin - direction only
 		vec4 normal_center = f_normal + center; // normal that goes from center point - to draw normal line on screen
 
+		
+
 		center = STransform * Projection * CTransform * center;
 		normal_center = STransform * Projection * CTransform * normal_center;
 		normal_origin = STransform * Projection * CTransform * normal_origin;
 		vec3 n = vec4t3(normal_center);
+		//vec3 n_origin = vec3(normal_origin.x, normal_origin.y, normal_origin.z);
 		vec3 n_origin = vec3(normal_origin.x, normal_origin.y, normal_origin.z);
 		vec3 c = vec4t3(center);
 
@@ -407,7 +438,7 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 		}
 
 		if (n_origin.z > 0) {
-			FillPolygon(curr_color, p[0], p[1], p[2], n_origin, fraction, pos_camera);
+			FillPolygon(curr_color, p[0], p[1], p[2], norm_per_v[0], norm_per_v[1], norm_per_v[2],n_origin, fraction, pos_camera);
 		}
 		if (show_normalsF){
 			Drawline(c, n, vec3(0,1,1));
@@ -415,8 +446,6 @@ void Renderer::DrawTriangles(const vector<vec3>* eye, const vector<vec3>* vertic
 		
 	}
 
-	if(lights.size() >= 2)
-		Drawline(lights[1]->place, vec3(256, 256, -BIG_NUMBER), vec3(1, 0, 0));
 
 	// draw bounding box
 	if (!bbox) return;
