@@ -33,7 +33,9 @@
 
 #define MAIN_DEMO 1
 #define MAIN_ABOUT 2
-#define MAIN_CLIP 3
+#define MAIN_AALIAS 3
+#define MAIN_FOG 4
+#define MAIN_BLUR 5
 
 #define MODEL_ACTIVE 1
 #define MODEL_COLOR 2
@@ -61,8 +63,11 @@
 #define CAM_FRAME_VIEW 1
 #define CAM_FRAME_WORLD 2
 
-#define COLOR_UNI 1
-#define COLOR_XUNI 2
+#define COLOR_E 1
+#define COLOR_D 2
+#define COLOR_S 3
+#define COLOR_UNI 4
+#define COLOR_ALL 5
 
 #define LIGHT_POINT 1
 #define LIGHT_PAR 2
@@ -126,9 +131,11 @@ void display(void)
 
 void reshape(int width, int height)
 {
+	printf("RESHAP\n");
 	//update the renderer's buffers
 	renderer->reshape(width, height);
 	//glFlush();
+	
 }
 
 void keyboard(unsigned char key, int x, int y)
@@ -151,9 +158,6 @@ void keyboard(unsigned char key, int x, int y)
 		//printf("MINUS\n");
 		scene->scale(key);
 		break;
-	case 'b':
-		scene->bbox();
-		break;
 
 	case 'f':
 		scene->focus();
@@ -174,14 +178,6 @@ void keyboard(unsigned char key, int x, int y)
 		scene->bright();
 		//control = 'l';
 		break;
-
-	case '(':
-		scene->blur();
-		break;
-	case ')':
-		scene->bloom();
-		break;
-
 
 	case 'a': // alpha shiness
 		scene->shine('+');
@@ -332,10 +328,15 @@ void mainMenu(int id)
 	case MAIN_ABOUT:
 		AfxMessageBox(_T("Computer Graphics"));
 		break;
-	case MAIN_CLIP:
-		pmin = dialogBoxVec("Minimum Point\n");
-		pmax = dialogBoxVec("Maximum Point\n");
-		scene->clip(pmin, pmax);
+	case MAIN_AALIAS:
+		scene->antialiasing();
+		break;
+	case MAIN_FOG:
+		scene->fog();
+		break;
+	case MAIN_BLUR:
+		scene->blur();
+		break;
 	}
 }
 
@@ -428,14 +429,26 @@ void camFrameMenu(int id) {
 }
 
 void colorMenu(int id) {
-	vec3 color = dialogBoxVec("Color");
+	vec3 color;
 	switch (id) {
-	case COLOR_UNI:
-		scene->color(color);
+	case COLOR_E:
+		color = dialogBoxVec("Color");
+		scene->color(color, 'e');
 		break;
-	case COLOR_XUNI:
-		scene->color(color, false);
+	case COLOR_D:
+		color = dialogBoxVec("Color");
+		scene->color(color, 'd');
 		break;
+	case COLOR_S:
+		color = dialogBoxVec("Color");
+		scene->color(color, 's');
+		break;
+	case COLOR_ALL:
+		color = dialogBoxVec("Color");
+		scene->color(color, 'a');
+		break;
+	case COLOR_UNI:	
+		scene->uniform();
 	}
 }
 
@@ -595,8 +608,11 @@ void initMenu()
 	glutAddMenuEntry("Vertex", NORMAL_VERTEX);
 
 	const int menuColor = glutCreateMenu(colorMenu);
+	glutAddMenuEntry("Emissive", COLOR_E);
+	glutAddMenuEntry("Diffuse", COLOR_D);
+	glutAddMenuEntry("Specular", COLOR_D);
 	glutAddMenuEntry("Uniform", COLOR_UNI);
-	glutAddMenuEntry("Non-Uniform", COLOR_XUNI);
+	glutAddMenuEntry("Color All", COLOR_ALL);
 
 	const int menuModel = glutCreateMenu(modelMenu);
 	glutAddMenuEntry("Set Active", MODEL_ACTIVE);
@@ -643,7 +659,9 @@ void initMenu()
 	glutAddSubMenu("Light", menuLight);
 	glutAddSubMenu("Set Step Size", menuStep);
 	glutAddSubMenu("Control", menuControl);
-	glutAddMenuEntry("Clip", MAIN_CLIP);
+	glutAddMenuEntry("Antialiasing", MAIN_AALIAS);
+	glutAddMenuEntry("Fog", MAIN_FOG);
+	glutAddMenuEntry("Blur", MAIN_BLUR);
 	glutAddMenuEntry("Demo", MAIN_DEMO);
 	glutAddMenuEntry("About", MAIN_ABOUT);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);

@@ -80,7 +80,8 @@ public:
 	void modelFrame(char frame);
 	void camMove(char dir);
 	void camFrame(char frame);
-	void color(vec3 color1, bool uni = true);
+	void uniform();
+	void color(vec3 color, char type = 'a');
 	void test();
 
 	void clip(vec3 p1, vec3 p2);
@@ -94,9 +95,10 @@ public:
 	void dimm();
 	void bright();
 	void blur();
-	void bloom();
 	void shine(char dir);
 	void diffuse(char dir);
 	void emissive(char dir);
 	void specular(char dir);
+	void antialiasing();
+	void fog();
 };

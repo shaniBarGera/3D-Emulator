@@ -78,7 +78,8 @@ void Scene::test() {
 
 void Scene::draw()
 {
-	printf("DRAW\n");
+	//printf("DRAW\n");
+	m_renderer->ClearColorBuffer();
 	vector<vec3> eyes;
 	for (size_t i = 0; i < cameras.size(); ++i) {
 		if (cameras[i]->rendered) 
@@ -88,15 +89,20 @@ void Scene::draw()
 	// 2. Tell all models to draw themselves
 	Camera* cam = cameras[activeCamera];
 	m_renderer->lights = lights;
+	m_renderer->drawCameras(&eyes);
+	m_renderer->SetScreenTransform();
+	m_renderer->SetCameraMatrices(cam->cTransform, cam->projection);
 	for (size_t i = 0; i < models.size(); ++i) {
 		 MeshModel* model = (MeshModel*)models[i];
 		 //m_renderer->SetDemoBuffer();
-		 m_renderer->SetScreenTransform();
-		 m_renderer->SetCameraMatrices(cam->cTransform, cam->projection);
 		 m_renderer->SetObjectMatrices(model->m_translate, model->m_transform, model->_world_transform, model->_normal_transform, model->_normal_world_transform);
 		 m_renderer->SetFlags(model->bbox, model->show_normalsV, model->show_normalsF, model->uniform);
-		 m_renderer->DrawTriangles(&eyes, &model->vertex_positions, model->color, &model->vertex_normal, &model->vertex_bbox, model->fraction, cam->eye, model->v_normal_position);
+		 m_renderer->DrawTriangles(&model->vertex_positions, model->color, &model->vertex_normal, model->fraction, cam->eye, model->v_normal_position);
+		 m_renderer->drawBBox(&model->vertex_bbox);
 	}
+	m_renderer->blur();
+	m_renderer->anti_aliasing();
+
 	if (models.size() > 0) {
 		m_renderer->SwapBuffers();
 		m_renderer->ClearColorBuffer();
@@ -104,20 +110,40 @@ void Scene::draw()
 	}
 }
 
-void Scene::clip(vec3 pmin, vec3 pmax) {
-	m_renderer->pmin = pmin;
-	m_renderer->pmax = pmax;
+void Scene::uniform() {
+	MeshModel* model = (MeshModel*)models[activeModel];
+	model->uniform = !model->uniform;
+}
 
-	for (int i = 0; i < models.size(); ++i) {
-		MeshModel* model = (MeshModel*)models[i];
-		model->clip = (model->pmin < pmin || model->pmax > pmax);
+void Scene::color(vec3 color, char type) {
+	MeshModel* model = (MeshModel*)models[activeModel];
+	switch (type) {
+	case 'e':
+		model->color[0] = color;
+		break;
+	case 'd':
+		model->color[1] = color;
+		break;
+	case 's':
+		model->color[2] = color;
+		break;
+	case 'a':
+		model->color = mat3(color, color, color);
+		break;
 	}
 }
 
-void Scene::color(vec3 color, bool uni) {
-	MeshModel* model = (MeshModel*)models[activeModel];
-	model->color = color;
-	model->uniform = uni;
+void Scene::fog() {
+	m_renderer->fogefect = !m_renderer->fogefect;
+}
+
+void Scene::blur() {
+	m_renderer->blureffect = !m_renderer->blureffect;
+}
+
+void Scene::antialiasing() {
+	m_renderer->antialiasing = !m_renderer->antialiasing;
+	m_renderer->setBuffer();
 }
 
 void Scene::drawDemo()
@@ -311,34 +337,34 @@ void Scene::camFrame(char frame) {
 }
 
 void Scene::camMove(char dir) {
-	printf("CAM MOVE\n");
+	//printf("CAM MOVE\n");
 	MeshModel* model = (MeshModel*)models[activeModel];
 	Camera* cam = (Camera*)cameras[activeCamera];
 	mat4 temp = model->_world_transform;
 	switch (dir) {
 	case 'l':
 		cam->eye.x -= step_cam;
-		printf("l:%f\n", cam->eye.x);
+		//printf("l:%f\n", cam->eye.x);
 		break;
 	case 'r':
 		cam->eye.x += step_cam;
-		printf("r:%f\n", cam->eye.x);
+		//printf("r:%f\n", cam->eye.x);
 		break;
 	case 'u':
 		cam->eye.y += step_cam;
-		printf("u:%f\n", cam->eye.y);
+		//printf("u:%f\n", cam->eye.y);
 		break;
 	case 'd':
 		cam->eye.y -= step_cam;
-		printf("d:%f\n", cam->eye.y);
+		//printf("d:%f\n", cam->eye.y);
 		break;
 	case 'c':
 		cam->eye.z -= step_cam;
-		printf("c:%f\n", cam->eye.z);
+		//printf("c:%f\n", cam->eye.z);
 		break;
 	case 'f':
 		cam->eye.z += step_cam;
-		printf("f:%f\n", cam->eye.z);
+		//printf("f:%f\n", cam->eye.z);
 		break;
 
 	}
@@ -488,7 +514,7 @@ void Scene::specular(char dir) {
 
 void Scene::addLight() {
 	// add new light
-	printf("ADD LIGHT\n");
+	//printf("ADD LIGHT\n");
 	Light* light = new Light();
 	lights.push_back(light);
 	activeLight = lights.size() - 1;
@@ -504,7 +530,7 @@ void Scene::deactivateLight() {
 
 void Scene::colorLight(vec3 color) {
 	// color active light
-	printf("COLOR LIGHT\n");
+	//printf("COLOR LIGHT\n");
 	Light* light = lights[activeLight];
 	light->color = color;
 
@@ -519,7 +545,7 @@ void Scene::positionLight(vec3 place) {
 
 void Scene::orientLight(char cord) {
 	// orient active light
-	printf("ORIENT LIGHT\n");
+	//printf("ORIENT LIGHT\n");
 	Light* light = lights[activeLight];
 	mat4 temp;
 	GLfloat curr_step = step_rotate;
@@ -548,7 +574,7 @@ void Scene::orientLight(char cord) {
 
 void Scene::setLightType(string type) {
 	// set light typeb (parallel/point/ambient)
-	printf("SET LIGHT TYPE\n");
+	//printf("SET LIGHT TYPE\n");
 	Light* light = lights[activeLight];
 	light->type = type;
 	if (type == "parallel") light->place = vec3(1, 0, 0);
@@ -569,13 +595,4 @@ void Scene::bright() {
 	printf("BRIGHT\n");
 	Light* light = lights[activeLight];
 	light->intensity += 0.1;
-}
-
-void Scene::blur() {
-
-
-}
-
-void Scene::bloom() {
-
 }

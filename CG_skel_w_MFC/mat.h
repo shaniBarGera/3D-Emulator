@@ -169,6 +169,11 @@ class mat3 {
     mat3( const GLfloat d = GLfloat(1.0) )  // Create a diagonal matrix
 	{ _m[0].x = d;  _m[1].y = d;  _m[2].z = d;   }
 
+    mat3(const vec3& a)
+    {
+        _m[0] = a;  _m[1] = a;  _m[2] = a;
+    }
+
     mat3( const vec3& a, const vec3& b, const vec3& c )
 	{ _m[0] = a;  _m[1] = b;  _m[2] = c;  }
 
@@ -705,3 +710,4 @@ mat4 Scale( const vec3& v )
 
 
 //----------------------------------------------------------------------------
+

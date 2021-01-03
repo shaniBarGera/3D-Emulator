@@ -22,7 +22,7 @@ public:
 	bool show_normalsF = false;
 	bool uniform = true;
 	char frame = 'm';
-	vec3 color = vec3(0.5,0.5,0.5);
+	mat3 color = mat3(vec3(0.5, 0.5, 0.5));
 	vec3 pmin = vec3(-BIG_NUMBER, -BIG_NUMBER, -BIG_NUMBER);
 	vec3 pmax = vec3(BIG_NUMBER, BIG_NUMBER, BIG_NUMBER);
 	mat4 _world_transform;
